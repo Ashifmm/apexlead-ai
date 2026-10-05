@@ -1,0 +1,13 @@
+{
+  "lead_id": 9,
+  "business_name": "Opulence Hair & Beauty Studio",
+  "industry": "Luxury Salon",
+  "location": "Vasundhara, Ghaziabad",
+  "theme": "rose",
+  "pages": [
+    "index.html",
+    "about.html",
+    "services.html",
+    "contact.html"
+  ]
+}

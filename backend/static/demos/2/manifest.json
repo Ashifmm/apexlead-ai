@@ -1,0 +1,13 @@
+{
+  "lead_id": 2,
+  "business_name": "Apex Performance Chiropractic",
+  "industry": "Healthcare & Wellness",
+  "location": "Denver, CO",
+  "theme": "amber",
+  "pages": [
+    "index.html",
+    "about.html",
+    "services.html",
+    "contact.html"
+  ]
+}

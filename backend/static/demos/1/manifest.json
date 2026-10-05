@@ -1,0 +1,13 @@
+{
+  "lead_id": 1,
+  "business_name": "Artisan Sourdough Bakery",
+  "industry": "Bakery & Cafe",
+  "location": "Austin, TX",
+  "theme": "amber",
+  "pages": [
+    "index.html",
+    "about.html",
+    "services.html",
+    "contact.html"
+  ]
+}
