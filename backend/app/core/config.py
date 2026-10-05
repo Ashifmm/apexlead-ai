@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     INSTAGRAM_SESSION_ID: str = ""
     INSTAGRAM_DAILY_LIMIT: int = 15
 
+    # Apify Integration (Optional)
+    APIFY_API_TOKEN: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         if not self.CORS_ORIGINS:

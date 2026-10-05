@@ -5,6 +5,7 @@ from app.schemas.lead import LeadOut
 
 class IGScanRequest(BaseModel):
     niche: Optional[str] = Field(None, description="Target industry or niche, e.g. Salons, eCommerce, Clinics or empty for general")
+    days_range: int = Field(7, ge=1, le=30, description="Post Freshness / Date Range in days (1, 2, 7, 14)")
     count: int = Field(5, ge=1, le=30, description="Target quantity of leads to capture (3, 5, 8, 12)")
     hashtag: Optional[str] = Field(None, description="Optional legacy hashtag")
     keyword: Optional[str] = Field(None, description="Optional legacy keyword")
@@ -14,6 +15,7 @@ class IGScanRequest(BaseModel):
 class IGScanResponse(BaseModel):
     message: str
     niche: Optional[str] = None
+    days_range: Optional[int] = None
     count: int
     leads: List[LeadOut]
     hashtag: Optional[str] = None

@@ -1,14 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Sparkles, Loader2, CheckCircle2, Briefcase, Zap, Layers } from "lucide-react";
+import { X, Sparkles, Loader2, CheckCircle2, Briefcase, Zap, Layers, Calendar, Clock } from "lucide-react";
 
 interface ScanInstagramModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onScan: (params: { niche?: string; count: number }) => Promise<void>;
+  onScan: (params: { niche?: string; days_range?: number; count: number }) => Promise<void>;
   isLoading: boolean;
 }
+
+const DATE_RANGE_OPTIONS = [
+  { value: 1, label: "Last 24 Hours (1 Day)" },
+  { value: 2, label: "Last 48 Hours (2 Days)" },
+  { value: 7, label: "Last 7 Days (1 Week)" },
+  { value: 14, label: "Last 14 Days (2 Weeks)" },
+];
 
 export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
   isOpen,
@@ -17,6 +24,7 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
   isLoading,
 }) => {
   const [niche, setNiche] = useState<string>("");
+  const [daysRange, setDaysRange] = useState<number>(7);
   const [count, setCount] = useState<number>(5);
   const [step, setStep] = useState<number>(0);
 
@@ -39,14 +47,15 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
     e.preventDefault();
     await onScan({
       niche: niche.trim() || undefined,
+      days_range: daysRange,
       count
     });
   };
 
   const steps = [
-    "Harvesting live Instagram posts and reels in real time...",
+    `Harvesting live Instagram posts & reels from the last ${daysRange} days...`,
     "Tier 1: AI verifying post relevance for business growth & brand services...",
-    "Tier 2: AI evaluating comment buyer-intent (strictly filtering confidence >= 70%)...",
+    "Tier 2: AI evaluating comment buyer-intent (website, online store, portfolio, redesign, pricing)...",
     "Generating GrowthGrid dynamic pitches & syncing genuine leads..."
   ];
 
@@ -85,7 +94,7 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
           <div className="mt-6 rounded-xl border border-pink-500/20 bg-pink-500/5 p-4 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-pink-400">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Running Autonomous 2-Tier AI Pipeline...</span>
+              <span>Running Autonomous 2-Tier AI Pipeline ({daysRange}d window)...</span>
             </div>
             <div className="space-y-2.5">
               {steps.map((s, idx) => (
@@ -106,19 +115,52 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
           </div>
         ) : (
           /* Form */
-          <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             {/* 2-Tier Explanation banner */}
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 text-[11px] text-slate-400 space-y-1.5">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 text-[11px] text-slate-400 space-y-1">
               <div className="flex items-center gap-1.5 font-semibold text-slate-200">
                 <Layers className="h-3.5 w-3.5 text-pink-400" />
-                <span>Autonomous 2-Tier Verification:</span>
+                <span>Autonomous 2-Tier Context Analyzer:</span>
               </div>
-              <p>
-                <strong className="text-pink-300">Tier 1:</strong> AI evaluates post relevance for business growth & brand building.
+              <p className="text-slate-400">
+                Tier 1 verifies business growth relevance; Tier 2 validates buyer intent for websites, redesigns, stores & pricing.
               </p>
-              <p>
-                <strong className="text-pink-300">Tier 2:</strong> AI analyzes commenter buyer-intent, requiring confidence &ge; 70% to eliminate spam.
-              </p>
+            </div>
+
+            {/* Post Freshness / Date Range Selector */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-pink-400" />
+                  <span>Post Freshness / Date Range</span>
+                </label>
+                <span className="text-[10px] font-mono font-bold text-pink-300 bg-pink-500/10 px-2 py-0.5 rounded border border-pink-500/20">
+                  {daysRange === 1 ? "Last 24 Hours" : daysRange === 2 ? "Last 48 Hours" : `Last ${daysRange} Days`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {DATE_RANGE_OPTIONS.map((opt) => {
+                  const isSelected = daysRange === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setDaysRange(opt.value)}
+                      className={`rounded-xl py-2 px-3 text-xs font-semibold border transition-all text-left flex items-center justify-between ${
+                        isSelected
+                          ? "border-pink-500 bg-pink-500/20 text-pink-300 shadow-sm shadow-pink-500/20"
+                          : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className={`h-3.5 w-3.5 ${isSelected ? "text-pink-400" : "text-slate-500"}`} />
+                        <span>{opt.label}</span>
+                      </div>
+                      {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-pink-400 flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Target Industry / Niche */}
@@ -149,7 +191,7 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
                     key={num}
                     type="button"
                     onClick={() => setCount(num)}
-                    className={`rounded-xl py-2.5 text-xs font-bold border transition-all ${
+                    className={`rounded-xl py-2 text-xs font-bold border transition-all ${
                       count === num
                         ? "border-pink-500 bg-pink-500/20 text-pink-300 shadow-sm shadow-pink-500/20"
                         : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white hover:border-slate-700"
@@ -167,14 +209,14 @@ export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="rounded-xl border border-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+                className="rounded-xl border border-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-pink-500/25 hover:opacity-95 active:scale-95 disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-6 py-2 text-xs font-bold text-white shadow-lg shadow-pink-500/25 hover:opacity-95 active:scale-95 disabled:opacity-50 transition-all"
               >
                 <Zap className="h-4 w-4" />
                 <span>Start AI Discovery</span>

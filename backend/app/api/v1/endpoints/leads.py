@@ -111,6 +111,7 @@ def scan_instagram_leads(
     leads = instagram_scanner.scan_intent(
         db,
         niche=req.niche,
+        days_range=req.days_range,
         count=req.count,
         keyword=req.keyword,
         hashtag=req.hashtag,
@@ -118,13 +119,14 @@ def scan_instagram_leads(
     )
     niche_label = req.niche or "All Niches"
     if len(leads) == 0:
-        msg = f"No live leads met the 2-Tier AI verification threshold (>= 70% confidence) for {niche_label}."
+        msg = f"No live leads met the 2-Tier AI verification threshold for {niche_label} within the last {req.days_range} days."
     else:
-        msg = f"Discovered {len(leads)} genuine live prospects verified by 2-Tier AI Intelligence."
+        msg = f"Discovered {len(leads)} genuine live prospects from the last {req.days_range} days verified by 2-Tier AI Intelligence."
 
     return IGScanResponse(
         message=msg,
         niche=req.niche,
+        days_range=req.days_range,
         count=len(leads),
         leads=leads,
         hashtag=req.hashtag,

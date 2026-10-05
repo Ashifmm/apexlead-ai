@@ -221,6 +221,21 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
               const commentDisplay = lead.comment_text || (lead.notes?.split("Original Comment:")[1]?.split("\n")[0]?.trim()) || (lead.score_reasons || "Commercial inquiry captured");
 
+              // Extract post freshness / time frame badge (e.g. "Posted 2d ago")
+              const matchAge = lead.notes?.match(/Posted:\s*([^\n]+)/i) || lead.score_reasons?.match(/Posted:\s*([^\n•]+)/i);
+              let postAgeBadge = matchAge ? `Posted ${matchAge[1].trim()}` : null;
+              if (!postAgeBadge) {
+                const createdDate = new Date(lead.created_at);
+                const now = new Date();
+                const diffHours = Math.max(1, Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60)));
+                if (diffHours < 24) {
+                  postAgeBadge = `Posted ${diffHours}h ago`;
+                } else {
+                  const diffDays = Math.floor(diffHours / 24);
+                  postAgeBadge = `Posted ${diffDays}d ago`;
+                }
+              }
+
               return (
                 <tr
                   key={lead.id}
@@ -267,10 +282,17 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
                   {/* Post Topic & Link */}
                   <td className="py-3 px-3 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <span className="inline-block rounded-md bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 text-[10px] font-semibold text-pink-300 max-w-[140px] truncate">
-                        {lead.industry || "Business Growth"}
-                      </span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-block rounded-md bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 text-[10px] font-semibold text-pink-300 max-w-[130px] truncate">
+                          {lead.industry || "Business Growth"}
+                        </span>
+                        {/* Selected time frame badge: e.g. "Posted 2d ago" */}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/90 border border-slate-700/80 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                          <Clock className="h-2.5 w-2.5 text-amber-400" />
+                          <span>{postAgeBadge}</span>
+                        </span>
+                      </div>
                       <div>
                         <a
                           href={postUrl}

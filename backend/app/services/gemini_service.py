@@ -254,7 +254,8 @@ class GeminiService:
             f"Commenter: @{clean_user}\n"
             f"Comment: '{clean_comment}'\n"
             f"Post Context: '{topic}'\n"
-            f"Determine if this commenter has commercial intent to get a website, redesign, store, pricing, or developer help.\n"
+            f"Determine if this commenter expresses interest in or commercial intent to get a website, online store, portfolio, redesign, developer help, or pricing.\n"
+            f"Accept any genuine inquiry or interest in web development, online sales, or pricing quotes.\n"
             f"Return JSON:\n"
             f"{{\n"
             f"  'is_website_lead': true/false,\n"
@@ -264,8 +265,8 @@ class GeminiService:
             f"}}"
         )
         system_instruction = (
-            "You are a B2B sales intelligence AI. Analyze commenter intent strictly for web development, "
-            "ecommerce setup, website redesign, pricing, or developer assistance. "
+            "You are a sales intelligence AI. Evaluate commenter interest in websites, online stores, portfolios, "
+            "redesigns, developer help, or pricing. Accept any commenter expressing genuine commercial interest. "
             "Extract or infer their business name cleanly. Return valid JSON only with keys "
             "'is_website_lead', 'confidence', 'business_name', and 'user_pain_point'."
         )
@@ -279,7 +280,7 @@ class GeminiService:
             if json_match:
                 cleaned = json_match.group(0)
             data = json.loads(cleaned.strip())
-            conf = int(data.get("confidence") or 50)
+            conf = int(data.get("confidence") or 60)
             conf = max(1, min(100, conf))
             b_name = str(data.get("business_name") or "").strip()
             if not b_name:
@@ -288,20 +289,23 @@ class GeminiService:
                 "is_website_lead": bool(data.get("is_website_lead", False)),
                 "confidence": conf,
                 "business_name": b_name,
-                "user_pain_point": str(data.get("user_pain_point") or "Needs modern website / digital storefront").strip()
+                "user_pain_point": str(data.get("user_pain_point") or "Needs modern website / online store").strip()
             }
         except Exception as e:
             logger.warning(f"Tier 2 AI Comment Evaluation error: {e}")
             c_low = clean_comment.lower()
-            intent_triggers = ["need a website", "need website", "cost", "price", "pricing", "redesign", "revamp", "shopify", "developer", "portfolio", "dm me", "how much"]
+            intent_triggers = [
+                "need a website", "need website", "cost", "price", "pricing", "redesign",
+                "revamp", "shopify", "store", "online store", "developer", "portfolio", "dm me", "how much", "quote"
+            ]
             is_lead = any(w in c_low for w in intent_triggers)
-            conf = 85 if is_lead else 45
+            conf = 85 if is_lead else 55
             b_name = clean_user.replace("_", " ").replace(".", " ").title()
             return {
                 "is_website_lead": is_lead,
                 "confidence": conf,
                 "business_name": b_name,
-                "user_pain_point": "Inquired about web development, pricing or redesign"
+                "user_pain_point": "Inquired about web development, online store, or pricing"
             }
 
     def generate_instagram_dm(

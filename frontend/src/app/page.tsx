@@ -214,6 +214,7 @@ export default function DashboardPage() {
 
   const handleScanInstagram = async (params: {
     niche?: string;
+    days_range?: number;
     count: number;
     hashtag?: string;
     keyword?: string;
@@ -222,7 +223,8 @@ export default function DashboardPage() {
     setIsScanningInstagram(true);
     try {
       const targetLabel = params.niche ? `niche "${params.niche}"` : "all commercial niches";
-      showToast(`Autonomous AI inspecting live Instagram context & buyer intent for ${targetLabel}...`, "success");
+      const daysLabel = params.days_range ? `last ${params.days_range}d` : "last 7d";
+      showToast(`Autonomous AI inspecting live Instagram (${daysLabel}) for ${targetLabel}...`, "success");
       const res = await scanInstagramIntent(params);
       showToast(res.message || `Discovered ${res.count} verified high-intent leads!`, "success");
       setIsScanInstagramOpen(false);

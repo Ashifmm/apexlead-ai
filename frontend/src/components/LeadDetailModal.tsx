@@ -159,6 +159,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const postUrl = lead.source_post_url || `https://instagram.com/${handleClean}`;
   const commentText = lead.comment_text || (lead.notes?.split("Original Comment:")[1]?.split("\n")[0]?.trim()) || "Commercial inquiry captured from Instagram";
 
+  const matchAgeModal = lead.notes?.match(/Posted:\s*([^\n]+)/i) || lead.score_reasons?.match(/Posted:\s*([^\n•]+)/i);
+  const postAgeModal = matchAgeModal ? `Posted ${matchAgeModal[1].trim()}` : "Recent";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/75 backdrop-blur-sm animate-in fade-in">
       <div className="relative flex h-full w-full max-w-2xl flex-col border-l border-slate-800 bg-slate-950 p-6 shadow-2xl overflow-y-auto">
@@ -181,6 +184,10 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 </a>
                 <span className="rounded-full bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 text-[11px] font-bold text-pink-300">
                   {lead.lead_score}% Intent
+                </span>
+                <span className="rounded-full bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 text-[10px] font-medium text-amber-300 flex items-center gap-1">
+                  <Clock className="h-2.5 w-2.5 text-amber-400" />
+                  <span>{postAgeModal}</span>
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
