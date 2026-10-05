@@ -32,11 +32,15 @@ class Lead(Base):
     phone = Column(String(100), nullable=True)
     instagram_handle = Column(String(100), nullable=True)
     
+    # Instagram Context Tracking
+    source_post_url = Column(String(500), nullable=True)
+    comment_text = Column(Text, nullable=True)
+    
     # Lead Pipeline & Origin
-    # source: "manual", "google_maps", "instagram", "csv_import", "n8n_webhook"
-    source = Column(String(50), default="manual", nullable=False)
-    # status: "new", "analyzed", "scored", "outreach_generated", "demo_generated", "contacted", "converted", "rejected"
-    status = Column(String(50), default="new", nullable=False, index=True)
+    # source: "Instagram Intent", "manual", "instagram"
+    source = Column(String(50), default="Instagram Intent", nullable=False)
+    # status: "Intent Detected", "DM Drafted", "DM Queued", "Sent"
+    status = Column(String(50), default="Intent Detected", nullable=False, index=True)
     
     # Stage 2: AI Lead Scoring (0 to 100)
     lead_score = Column(Integer, default=0, nullable=False, index=True)

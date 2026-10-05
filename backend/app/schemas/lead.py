@@ -12,9 +12,11 @@ class LeadBase(BaseModel):
     email: Optional[str] = Field(None, max_length=255, description="Contact email address")
     phone: Optional[str] = Field(None, max_length=100, description="Contact phone number")
     instagram_handle: Optional[str] = Field(None, max_length=100, description="Instagram username or profile link")
-    source: Optional[str] = Field("manual", max_length=50, description="Origin source: manual, google_maps, instagram, csv_import, n8n")
-    status: Optional[str] = Field("new", max_length=50, description="Pipeline status: new, analyzed, scored, outreach_generated, demo_generated, contacted, converted, rejected")
-    lead_score: Optional[int] = Field(0, ge=0, le=100, description="AI calculated opportunity score (0 to 100)")
+    source_post_url: Optional[str] = Field(None, max_length=500, description="Source Instagram post/reel URL")
+    comment_text: Optional[str] = Field(None, description="Exact intent comment captured from Instagram")
+    source: Optional[str] = Field("Instagram Intent", max_length=50, description="Origin source: Instagram Intent, manual")
+    status: Optional[str] = Field("Intent Detected", max_length=50, description="Pipeline status: Intent Detected, DM Drafted, DM Queued, Sent")
+    lead_score: Optional[int] = Field(0, ge=0, le=100, description="AI calculated intent score (0 to 100)")
     score_reasons: Optional[str] = Field(None, description="Breakdown / explanation for the assigned score")
     website_analysis: Optional[str] = Field(None, description="JSON or markdown audit summary of current website")
     outreach_email_subject: Optional[str] = Field(None, max_length=255, description="AI generated cold email subject line")
@@ -48,6 +50,8 @@ class LeadUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     instagram_handle: Optional[str] = None
+    source_post_url: Optional[str] = None
+    comment_text: Optional[str] = None
     source: Optional[str] = None
     status: Optional[str] = None
     lead_score: Optional[int] = Field(None, ge=0, le=100)
@@ -88,14 +92,18 @@ class LeadListResponse(BaseModel):
 
 class LeadStats(BaseModel):
     total_leads: int
-    no_website_count: int
-    has_website_count: int
-    demos_ready_count: int
-    outreach_ready_count: int
-    contacted_count: int
-    converted_count: int
-    average_score: float
-    status_breakdown: Dict[str, int]
+    intent_detected_count: int = 0
+    dm_drafted_count: int = 0
+    dm_queued_count: int = 0
+    sent_count: int = 0
+    average_score: float = 0.0
+    status_breakdown: Dict[str, int] = Field(default_factory=dict)
+    no_website_count: int = 0
+    has_website_count: int = 0
+    demos_ready_count: int = 0
+    outreach_ready_count: int = 0
+    contacted_count: int = 0
+    converted_count: int = 0
 
 
 class NicheSeedRequest(BaseModel):

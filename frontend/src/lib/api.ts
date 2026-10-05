@@ -106,86 +106,33 @@ export async function seedSampleLeads(): Promise<{ message: string; inserted: nu
   });
 }
 
-export async function seedNicheLeads(data: {
-  niche: string;
-  city: string;
-}): Promise<{ message: string; niche: string; city: string; count: number; leads: Lead[] }> {
-  return request("/leads/seed-niche", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function analyzeLead(data: {
-  lead_id?: number;
-  business_name?: string;
-  industry?: string;
-  location?: string;
-  website_url?: string;
-  instagram_handle?: string;
-  notes?: string;
-}): Promise<import("@/types/lead").LeadAnalysisResponse> {
-  return request<import("@/types/lead").LeadAnalysisResponse>("/ai/analyze-lead", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function analyzeWebsite(data: {
-  website_url?: string;
-  lead_id?: number;
-  business_name?: string;
-  industry?: string;
-}): Promise<import("@/types/lead").WebsiteAnalyzeResponse> {
-  return request<import("@/types/lead").WebsiteAnalyzeResponse>("/ai/analyze-website", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function generateWebsiteDemo(
-  leadId: number,
-  options?: { custom_instructions?: string; theme_color?: string }
-): Promise<import("@/types/lead").DemoGenerateResponse> {
-  return request<import("@/types/lead").DemoGenerateResponse>(`/ai/generate-demo/${leadId}`, {
-    method: "POST",
-    body: JSON.stringify(options || {}),
-  });
-}
-
-export async function fetchDemoDetails(leadId: number): Promise<import("@/types/lead").DemoDetailResponse> {
-  return request<import("@/types/lead").DemoDetailResponse>(`/ai/demo/${leadId}`);
-}
-
 export async function scanInstagramIntent(data: {
+  hashtag?: string;
   keyword?: string;
+  target_account?: string;
   count?: number;
-}): Promise<{ message: string; keyword: string; count: number; leads: Lead[] }> {
+}): Promise<{ message: string; hashtag?: string; keyword?: string; count: number; leads: Lead[] }> {
   return request("/leads/scan-instagram", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function scanMapsLeads(data: {
-  niche: string;
-  city: string;
-  count?: number;
-}): Promise<{ message: string; niche: string; city: string; count: number; leads: Lead[] }> {
-  return request("/leads/scan-maps", {
+export async function queueLead(leadId: number): Promise<Lead> {
+  return request<Lead>(`/leads/${leadId}/queue`, {
     method: "POST",
-    body: JSON.stringify(data),
   });
 }
 
-export async function scanMapsLeadsDirect(data: {
-  niche: string;
-  city: string;
-  count?: number;
-}): Promise<{ message: string; niche: string; city: string; count: number; leads: Lead[] }> {
-  return request("/leads/scan-maps-direct", {
+export async function markLeadSent(leadId: number): Promise<Lead> {
+  return request<Lead>(`/leads/${leadId}/mark-sent`, {
     method: "POST",
-    body: JSON.stringify(data),
+  });
+}
+
+export async function regenerateLeadDM(leadId: number): Promise<Lead> {
+  return request<Lead>(`/leads/${leadId}/regenerate-dm`, {
+    method: "POST",
   });
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, Globe2, Mail, Layout, TrendingUp, AlertTriangle } from "lucide-react";
+import { Users, Sparkles, Send, Clock, TrendingUp } from "lucide-react";
 import { LeadStats } from "@/types/lead";
 
 interface StatsOverviewProps {
@@ -16,7 +16,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, loading }) 
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="glass-panel h-28 animate-pulse rounded-2xl p-4"
+            className="glass-panel h-28 animate-pulse rounded-2xl p-4 bg-slate-900/60"
           >
             <div className="h-4 w-20 rounded bg-slate-800 mb-3" />
             <div className="h-8 w-12 rounded bg-slate-800" />
@@ -26,56 +26,57 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, loading }) 
     );
   }
 
-  const noWebsitePercentage = stats.total_leads > 0
-    ? Math.round((stats.no_website_count / stats.total_leads) * 100)
-    : 0;
+  const intentCount = stats.intent_detected_count ?? (stats.total_leads - (stats.sent_count || 0));
+  const draftedCount = stats.dm_drafted_count ?? (stats.outreach_ready_count || 0);
+  const queuedCount = stats.dm_queued_count ?? 0;
+  const sentCount = stats.sent_count ?? (stats.contacted_count || 0);
 
   const cards = [
     {
-      label: "Total Leads",
+      label: "Total Intent Leads",
       value: stats.total_leads,
-      subtitle: "In active pipeline",
+      subtitle: "Active commercial prospects",
       icon: Users,
-      iconColor: "text-blue-400",
-      bgColor: "from-blue-500/10 to-indigo-500/5",
-      borderColor: "border-blue-500/20",
+      iconColor: "text-pink-400",
+      bgColor: "from-pink-500/10 to-rose-500/5",
+      borderColor: "border-pink-500/20",
     },
     {
-      label: "Needs Website",
-      value: stats.no_website_count,
-      subtitle: `${noWebsitePercentage}% prime opportunities`,
-      icon: AlertTriangle,
+      label: "AI DMs Drafted",
+      value: draftedCount,
+      subtitle: "Personalized & ready to review",
+      icon: Sparkles,
       iconColor: "text-amber-400",
       bgColor: "from-amber-500/10 to-orange-500/5",
       borderColor: "border-amber-500/20",
+    },
+    {
+      label: "Dispatch Queue",
+      value: queuedCount,
+      subtitle: "Awaiting safe pacing interval",
+      icon: Clock,
+      iconColor: "text-purple-400",
+      bgColor: "from-purple-500/10 to-indigo-500/5",
+      borderColor: "border-purple-500/20",
       highlight: true,
     },
     {
-      label: "Outreach Ready",
-      value: stats.outreach_ready_count,
-      subtitle: "AI emails & DMs prepared",
-      icon: Mail,
-      iconColor: "text-purple-400",
-      bgColor: "from-purple-500/10 to-pink-500/5",
-      borderColor: "border-purple-500/20",
-    },
-    {
-      label: "Demos Ready",
-      value: stats.demos_ready_count,
-      subtitle: "Personalized prototypes",
-      icon: Layout,
+      label: "DMs Dispatched",
+      value: sentCount,
+      subtitle: "Sent via 1-Click & Auto-DM",
+      icon: Send,
       iconColor: "text-emerald-400",
       bgColor: "from-emerald-500/10 to-teal-500/5",
       borderColor: "border-emerald-500/20",
     },
     {
-      label: "Avg. Lead Score",
-      value: `${stats.average_score}/100`,
-      subtitle: "Opportunity index",
+      label: "Avg. Intent Score",
+      value: `${stats.average_score}%`,
+      subtitle: "Commercial inquiry confidence",
       icon: TrendingUp,
-      iconColor: "text-indigo-400",
-      bgColor: "from-indigo-500/10 to-violet-500/5",
-      borderColor: "border-indigo-500/20",
+      iconColor: "text-cyan-400",
+      bgColor: "from-cyan-500/10 to-blue-500/5",
+      borderColor: "border-cyan-500/20",
     },
   ];
 
@@ -89,7 +90,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, loading }) 
             className={`glass-panel glass-panel-hover relative overflow-hidden rounded-2xl border ${card.borderColor} bg-gradient-to-br ${card.bgColor} p-4.5 transition-all`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">{card.label}</span>
+              <span className="text-xs font-semibold text-slate-300">{card.label}</span>
               <div className="rounded-lg bg-slate-900/60 p-1.5 ring-1 ring-white/10">
                 <IconComponent className={`h-4 w-4 ${card.iconColor}`} />
               </div>

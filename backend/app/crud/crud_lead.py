@@ -45,16 +45,16 @@ class CRUDLead:
 
         if status and status.strip() and status != "all":
             s = status.strip()
-            if s == "Outreach Ready":
-                query = query.filter(or_(Lead.status == "Outreach Ready", Lead.status == "outreach_generated"))
-            elif s == "Pitch Sent":
-                query = query.filter(or_(Lead.status == "Pitch Sent", Lead.status == "contacted"))
-            elif s in ("Closed", "Deal Won 🎉"):
+            if s == "Intent Detected":
+                query = query.filter(or_(Lead.status == "Intent Detected", Lead.status == "new"))
+            elif s == "DM Drafted":
+                query = query.filter(or_(Lead.status == "DM Drafted", Lead.status == "Outreach Ready", Lead.status == "outreach_generated"))
+            elif s == "DM Queued":
+                query = query.filter(Lead.status == "DM Queued")
+            elif s in ("Sent", "Pitch Sent"):
+                query = query.filter(or_(Lead.status == "Sent", Lead.status == "Pitch Sent", Lead.status == "contacted"))
+            elif s in ("Closed", "Deal Won 🎉", "converted"):
                 query = query.filter(or_(Lead.status == "Closed", Lead.status == "converted", Lead.status == "Deal Won 🎉"))
-            elif s == "contacted":
-                query = query.filter(or_(Lead.status == "contacted", Lead.status == "Pitch Sent"))
-            elif s == "converted":
-                query = query.filter(or_(Lead.status == "converted", Lead.status == "Closed", Lead.status == "Deal Won 🎉"))
             else:
                 query = query.filter(Lead.status == s)
 
@@ -132,22 +132,22 @@ class CRUDLead:
         return obj
 
     def get_stats(self, db: Session) -> Dict[str, Any]:
-        """Aggregate statistical metrics for dashboard."""
+        """Aggregate statistical metrics for Instagram lead pipeline."""
         total = db.query(func.count(Lead.id)).scalar() or 0
-        no_website = db.query(func.count(Lead.id)).filter(Lead.has_website == False).scalar() or 0
-        has_website = db.query(func.count(Lead.id)).filter(Lead.has_website == True).scalar() or 0
-        demos_ready = db.query(func.count(Lead.id)).filter(Lead.demo_url.isnot(None), Lead.demo_url != "").scalar() or 0
-        outreach_ready = db.query(func.count(Lead.id)).filter(
-            or_(
-                Lead.outreach_email_body.isnot(None),
-                Lead.outreach_instagram_dm.isnot(None)
-            )
+        intent_detected = db.query(func.count(Lead.id)).filter(
+            Lead.status.in_(["Intent Detected", "new"])
         ).scalar() or 0
-        contacted = db.query(func.count(Lead.id)).filter(
-            or_(Lead.status == "contacted", Lead.status == "Pitch Sent")
+        dm_drafted = db.query(func.count(Lead.id)).filter(
+            Lead.status.in_(["DM Drafted", "Outreach Ready", "outreach_generated"])
+        ).scalar() or 0
+        dm_queued = db.query(func.count(Lead.id)).filter(
+            Lead.status == "DM Queued"
+        ).scalar() or 0
+        sent_count = db.query(func.count(Lead.id)).filter(
+            Lead.status.in_(["Sent", "Pitch Sent", "contacted"])
         ).scalar() or 0
         converted = db.query(func.count(Lead.id)).filter(
-            or_(Lead.status == "converted", Lead.status == "Closed", Lead.status == "Deal Won 🎉")
+            Lead.status.in_(["converted", "Closed", "Deal Won 🎉"])
         ).scalar() or 0
         avg_score = db.query(func.avg(Lead.lead_score)).scalar() or 0.0
 
@@ -157,121 +157,97 @@ class CRUDLead:
 
         return {
             "total_leads": total,
-            "no_website_count": no_website,
-            "has_website_count": has_website,
-            "demos_ready_count": demos_ready,
-            "outreach_ready_count": outreach_ready,
-            "contacted_count": contacted,
+            "intent_detected_count": intent_detected,
+            "dm_drafted_count": dm_drafted,
+            "dm_queued_count": dm_queued,
+            "sent_count": sent_count,
             "converted_count": converted,
             "average_score": round(float(avg_score), 1),
-            "status_breakdown": status_breakdown
+            "status_breakdown": status_breakdown,
+            # Legacy compatibility fields
+            "no_website_count": total,
+            "has_website_count": 0,
+            "demos_ready_count": dm_drafted,
+            "outreach_ready_count": dm_drafted + dm_queued,
+            "contacted_count": sent_count,
         }
 
     def seed_sample_data(self, db: Session) -> int:
-        """Seed realistic agency leads for development and dashboard testing."""
-        # Only seed if table is currently empty
+        """Seed realistic Instagram intent prospects with comments and personalized AI DMs."""
         existing_count = db.query(Lead).count()
         if existing_count > 0:
             return 0
 
         sample_leads = [
             Lead(
-                business_name="Artisan Sourdough Bakery",
-                industry="Bakery & Cafe",
-                location="Austin, TX",
-                website_url=None,
-                has_website=False,
-                email="hello@artisansourdoughaustin.com",
-                phone="(512) 555-0192",
-                instagram_handle="@artisanbakery_atx",
-                source="instagram",
-                status="new",
-                lead_score=92,
-                score_reasons="High engagement on Instagram (12k followers), active daily stories, no online ordering or menu website.",
-                notes="Prime candidate for custom menu & online pickup ordering demo.",
+                business_name="Velvet Hair Studio",
+                industry="Luxury Salon",
+                location="Instagram (#salondesign)",
+                instagram_handle="@velvet_hair_studio",
+                source="Instagram Intent",
+                status="DM Drafted",
+                lead_score=96,
+                source_post_url="https://instagram.com/p/C7x9LmP3qK1",
+                comment_text="We are expanding our salon next month and desperately need a modern website with online booking for 4 stylists. How much would this cost? DM me portfolio!",
+                score_reasons="High commercial intent: Explicit inquiry for online booking system + budget inquiry ('how much would this cost?') + request to DM portfolio.",
+                outreach_instagram_dm="Hey @velvet_hair_studio! Saw your comment asking about website pricing and online booking for 4 stylists. We specialize in ultra-fast, high-converting booking portals for luxury salons that fill empty chairs automatically. Put together a quick visual concept for you — mind if I drop the preview link here?",
+                notes="Captured under #salondesign reel. High-priority lead with active stylist expansion."
             ),
             Lead(
-                business_name="Apex Performance Chiropractic",
-                industry="Healthcare & Wellness",
-                location="Denver, CO",
-                website_url="http://apexchiro-denver-old.net",
-                has_website=True,
-                email="contact@apexchiro-denver.com",
-                phone="(303) 555-4481",
-                instagram_handle="@apexchirodenver",
-                source="google_maps",
-                status="analyzed",
-                lead_score=85,
-                score_reasons="Existing website is outdated (HTTP only, non-responsive on mobile, slow load time 4.2s).",
-                website_analysis="No SSL certificate. Broken appointment booking widget. Poor mobile score (34/100).",
-                notes="Send modern redesign demo with integrated booking calendar.",
+                business_name="Aura Aesthetic Dental",
+                industry="Dental Clinic",
+                location="Instagram (#smallbusinessowner)",
+                instagram_handle="@auradental_implants",
+                source="Instagram Intent",
+                status="DM Queued",
+                lead_score=94,
+                source_post_url="https://instagram.com/p/C8y2KlQ4rM2",
+                comment_text="Looking for a serious web developer to revamp our clinic website and patient appointment portal. What are your rates?",
+                score_reasons="High conversion potential: Active clinic search for qualified web developer to build patient appointment workflow.",
+                outreach_instagram_dm="Hey @auradental_implants! Saw your comment about revamping your clinic's patient appointment portal. We build high-trust, HIPAA-compliant dental websites that make scheduling seamless on mobile. Put together a quick interactive prototype for your practice — mind if I send over the link?",
+                notes="Lead queued for automated dispatch batch."
             ),
             Lead(
-                business_name="Luxe Detail Garage",
-                industry="Automotive Detailing",
-                location="Miami, FL",
-                website_url=None,
-                has_website=False,
-                email="booking@luxedetailgarage.com",
-                phone="(305) 555-7823",
-                instagram_handle="@luxedetail_garage",
-                source="instagram",
-                status="outreach_generated",
+                business_name="Iron Foundry Strength Club",
+                industry="Fitness & Gym",
+                location="Instagram (#needwebsite)",
+                instagram_handle="@iron_foundry_gym",
+                source="Instagram Intent",
+                status="Sent",
                 lead_score=95,
-                score_reasons="High-ticket services ($500-$2000 per detail), strong visual portfolio on IG, relying solely on DMs for booking inquiries.",
-                outreach_email_subject="Quick question regarding Luxe Detail Garage's booking system",
-                outreach_email_body="Hey Luxe Detail team,\n\nCame across your incredible ceramic coating work on Instagram. Noticed you handle all client bookings manually via DMs. We built an interactive booking & package showcase demo specifically tailored for high-end auto studios in Miami.",
-                outreach_instagram_dm="Hey team @luxedetail_garage! Love the recent GT3 RS paint correction reel. Dropping a quick note — we created a modern showcase & instant booking concept for your shop so clients can pick packages seamlessly.",
-                notes="Personalized IG DM ready for review.",
+                source_post_url="https://instagram.com/p/C6w8PzR9tN3",
+                comment_text="Need a clean Shopify or Next.js website for gym memberships and merch checkout ASAP. Please dm me with pricing and turnaround.",
+                score_reasons="Immediate purchase intent: 'ASAP' timeline mentioned with explicit request for pricing and turnaround on membership checkout.",
+                outreach_instagram_dm="Hey @iron_foundry_gym! Saw your comment about needing a clean membership & merch checkout website ASAP. We specialize in fast Next.js & Shopify fitness platforms that automate recurring gym signups. Put together a live concept preview for you — mind if I drop the link here?",
+                notes="[Auto-DM Dispatched with safe humanized interval 48s]"
             ),
             Lead(
-                business_name="Summit Peak Roofing",
-                industry="Home Services & Construction",
-                location="Seattle, WA",
-                website_url="https://summitpeakroofing-sample.com",
-                has_website=True,
-                email="estimates@summitpeakroofing.com",
-                phone="(206) 555-3211",
-                instagram_handle=None,
-                source="google_maps",
-                status="demo_generated",
-                lead_score=78,
-                score_reasons="Established business with 40+ 5-star Google reviews but generic template site without quote calculator.",
-                demo_url="https://demo.apexagency.ai/preview/summit-peak-roofing",
-                outreach_email_subject="Built a live roofing quote calculator demo for Summit Peak",
-                outreach_email_body="Hi Summit Peak team,\n\nYour 5-star reviews on Google are stellar. To help turn more local Seattle search traffic into phone calls, we designed a quick interactive instant estimate preview for you.",
-                notes="Demo link generated. Ready for cold email blast.",
+                business_name="Cinnamon & Sage Bakehouse",
+                industry="Artisan Cafe",
+                location="Instagram (#ecommercebrand)",
+                instagram_handle="@cinnamon_sage_bakehouse",
+                source="Instagram Intent",
+                status="DM Drafted",
+                lead_score=91,
+                source_post_url="https://instagram.com/p/C9t1VxY5sL4",
+                comment_text="Our bakery is launching wholesale orders online. Need an ecommerce site to take catering deposits. How much for a custom shop?",
+                score_reasons="B2B Catering revenue signal: Looking to collect online deposits and wholesale orders digitally.",
+                outreach_instagram_dm="Hey @cinnamon_sage_bakehouse! Saw your comment about launching online wholesale ordering and catering deposits. We build custom ecommerce flows for artisan bakeries that make wholesale reordering effortless. Built a quick visual concept for you — mind if I share the preview?",
+                notes="Ready for review and queueing."
             ),
             Lead(
-                business_name="Bella Cucina Trattoria",
-                industry="Restaurant & Dining",
-                location="Chicago, IL",
-                website_url=None,
-                has_website=False,
-                email="info@bellacucinachicago.com",
-                phone="(312) 555-9014",
-                instagram_handle="@bellacucina_chi",
-                source="manual",
-                status="contacted",
-                lead_score=88,
-                score_reasons="New authentic Italian spot in West Loop, busy weekend foot traffic, PDF menu on Facebook only.",
-                notes="Cold email sent on Monday. Follow up scheduled.",
-            ),
-            Lead(
-                business_name="Vanguard Wealth Partners",
-                industry="Financial Services",
-                location="New York, NY",
-                website_url="https://vanguardwealthsample.com",
-                has_website=True,
-                email="advisors@vanguardwealthsample.com",
-                phone="(212) 555-6670",
-                instagram_handle=None,
-                source="manual",
-                status="converted",
-                lead_score=90,
-                score_reasons="High ACV client, converted after receiving custom high-trust corporate portal demo.",
-                demo_url="https://demo.apexagency.ai/preview/vanguard-wealth",
-                notes="Closed $4,500 redesign package + $350/mo maintenance retainer.",
+                business_name="Obsidian Auto Detailing",
+                industry="Auto Detailing",
+                location="Instagram (#smallbusinessowner)",
+                instagram_handle="@obsidian_auto_detail",
+                source="Instagram Intent",
+                status="Intent Detected",
+                lead_score=89,
+                source_post_url="https://instagram.com/p/C5q7JnB2mK5",
+                comment_text="Our current site is broken on mobile. Looking to hire a web developer for full redesign with instant quote calculator. DM me!",
+                score_reasons="Identified pain point: Broken mobile UX and manual quoting taking up too much time.",
+                outreach_instagram_dm="Hey @obsidian_auto_detail! Saw your comment about needing an instant quote calculator and mobile fix for your detailing studio. We build interactive package selectors and ceramic coating booking sites that 2x inbound requests. Would love to show you a quick prototype!",
+                notes="New intent detected from competitor agency comment section."
             )
         ]
 

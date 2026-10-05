@@ -4,29 +4,29 @@ from app.schemas.lead import LeadOut
 
 
 class IGScanRequest(BaseModel):
-    keyword: str = Field("need website", min_length=2, max_length=150, description="Keyword phrase signaling website intent, e.g. 'need website', 'looking for developer', 'want ecommerce'")
-    count: int = Field(5, ge=1, le=20, description="Number of intent leads to discover")
+    hashtag: Optional[str] = Field("needwebsite", description="Target hashtag to scan, e.g. needwebsite, webdesign, ecommercebrand, smallbusinessowner")
+    keyword: Optional[str] = Field("need a website", description="Intent trigger phrase to filter comments, e.g. need website, cost, dm me, shopify")
+    target_account: Optional[str] = Field(None, description="Optional competitor or agency profile to inspect, e.g. webflow, shopify, squarespace")
+    count: int = Field(5, ge=1, le=30, description="Number of high-intent prospects to capture")
 
 
 class IGScanResponse(BaseModel):
     message: str
-    keyword: str
+    hashtag: Optional[str] = None
+    keyword: Optional[str] = None
     count: int
     leads: List[LeadOut]
 
 
-class MapsScanRequest(BaseModel):
-    niche: str = Field(..., min_length=2, max_length=100, description="Target vertical/industry, e.g. Dental Clinic, Luxury Salon, Gym, Cafe")
-    city: str = Field(..., min_length=2, max_length=100, description="Target city/region, e.g. Ghaziabad, Delhi, Noida, Austin, New York")
-    count: int = Field(5, ge=1, le=20, description="Number of local businesses to scrape")
+class GenerateDMRequest(BaseModel):
+    custom_tone: Optional[str] = Field("casual & high-converting", description="Tone of outreach message")
 
 
-class MapsScanResponse(BaseModel):
+class GenerateDMResponse(BaseModel):
+    lead_id: int
+    handle: str
+    personalized_dm: str
     message: str
-    niche: str
-    city: str
-    count: int
-    leads: List[LeadOut]
 
 
 class IGDispatchBatchRequest(BaseModel):

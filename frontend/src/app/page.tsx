@@ -8,9 +8,7 @@ import { LeadTable, getLeadPriority } from "@/components/LeadTable";
 import { LeadDetailModal } from "@/components/LeadDetailModal";
 import { CreateLeadModal } from "@/components/CreateLeadModal";
 import { EditLeadModal } from "@/components/EditLeadModal";
-import { TargetNicheModal } from "@/components/TargetNicheModal";
 import { ScanInstagramModal } from "@/components/ScanInstagramModal";
-import { ScanMapsModal } from "@/components/ScanMapsModal";
 import { AutonomousStreamModal } from "@/components/AutonomousStreamModal";
 import {
   fetchLeads,
@@ -20,10 +18,10 @@ import {
   updateLeadStatus,
   deleteLead,
   seedSampleLeads,
-  seedNicheLeads,
   scanInstagramIntent,
-  scanMapsLeads,
-  scanMapsLeadsDirect,
+  queueLead,
+  markLeadSent,
+  regenerateLeadDM,
   dispatchInstagramBatch,
   fetchInstagramOutreachStatus,
   fetchAgentStatus,
@@ -32,9 +30,6 @@ import {
   AgentStatus,
   BACKEND_HOST,
   checkBackendHealth,
-  analyzeLead,
-  analyzeWebsite,
-  generateWebsiteDemo,
 } from "@/lib/api";
 import { Lead, LeadCreateInput, LeadStats, LeadUpdateInput } from "@/types/lead";
 import { CheckCircle2, AlertTriangle, X } from "lucide-react";
@@ -50,7 +45,6 @@ export default function DashboardPage() {
   // Filters
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [hasWebsiteFilter, setHasWebsiteFilter] = useState<boolean | undefined>(undefined);
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
 
@@ -59,15 +53,13 @@ export default function DashboardPage() {
   const selectedLeadIdRef = React.useRef<number | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [isTargetNicheOpen, setIsTargetNicheOpen] = useState<boolean>(false);
   const [isScanInstagramOpen, setIsScanInstagramOpen] = useState<boolean>(false);
-  const [isScanMapsOpen, setIsScanMapsOpen] = useState<boolean>(false);
   const [isScanningInstagram, setIsScanningInstagram] = useState<boolean>(false);
-  const [isScanningMaps, setIsScanningMaps] = useState<boolean>(false);
 
   // Outreach Automation State
   const [dailyIgLimit, setDailyIgLimit] = useState<number>(15);
   const [isDispatchingIg, setIsDispatchingIg] = useState<boolean>(false);
+  const [isRegeneratingDM, setIsRegeneratingDM] = useState<boolean>(false);
   const [igOutreachStatus, setIgOutreachStatus] = useState<{
     daily_limit: number;
     dispatched_today: number;
@@ -89,12 +81,6 @@ export default function DashboardPage() {
     selectedLeadIdRef.current = null;
     setSelectedLead(null);
   }, []);
-
-  // AI Analysis & Demo Loading Trackers
-  const [analyzingLeadId, setAnalyzingLeadId] = useState<number | null>(null);
-  const [isModalAnalyzingLead, setIsModalAnalyzingLead] = useState<boolean>(false);
-  const [isModalAuditingWebsite, setIsModalAuditingWebsite] = useState<boolean>(false);
-  const [isModalGeneratingDemo, setIsModalGeneratingDemo] = useState<boolean>(false);
 
   // Toast Notification
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -122,7 +108,6 @@ export default function DashboardPage() {
       const leadsRes = await fetchLeads({
         search: search.trim() || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
-        has_website: hasWebsiteFilter,
         page_size: 100,
       });
       setLeads(leadsRes.items);
@@ -157,7 +142,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, hasWebsiteFilter, dailyIgLimit]);
+  }, [search, statusFilter, dailyIgLimit]);
 
   // Initial load and filter change
   useEffect(() => {
@@ -227,23 +212,19 @@ export default function DashboardPage() {
     }
   };
 
-  const handleTargetNiche = async (niche: string, city: string) => {
-    try {
-      showToast(`Scouting high-intent ${niche} prospects in ${city}...`, "success");
-      const res = await seedNicheLeads({ niche, city });
-      showToast(res.message || `Discovered ${res.count} ${niche} leads in ${city}!`, "success");
-      await loadData();
-    } catch (err: any) {
-      showToast(err.message || "Failed to target niche leads", "error");
-      throw err;
-    }
-  };
-
-  const handleScanInstagram = async ({ keyword, count }: { keyword: string; count: number }) => {
+  const handleScanInstagram = async (params: {
+    hashtag?: string;
+    keyword?: string;
+    target_account?: string;
+    count: number;
+  }) => {
     setIsScanningInstagram(true);
     try {
-      showToast(`Scanning Instagram comments & bios for "${keyword}"...`, "success");
-      const res = await scanInstagramIntent({ keyword, count });
+      const targetLabel = params.target_account
+        ? `@${params.target_account}`
+        : `#${params.hashtag || "webdesign"}`;
+      showToast(`Scanning Instagram comments & intent across ${targetLabel}...`, "success");
+      const res = await scanInstagramIntent(params);
       showToast(res.message || `Discovered ${res.count} Instagram intent leads!`, "success");
       setIsScanInstagramOpen(false);
       await loadData();
@@ -254,47 +235,46 @@ export default function DashboardPage() {
     }
   };
 
-  const handleScanMaps = async ({
-    niche,
-    city,
-    count,
-    mode = "direct",
-  }: {
-    niche: string;
-    city: string;
-    count: number;
-    mode?: "direct" | "browser";
-  }) => {
-    setIsScanningMaps(true);
+  const handleQueueLead = async (id: number) => {
     try {
-      showToast(
-        mode === "direct"
-          ? `Scouting 4.0+★ ${niche} in ${city} via Fast Direct Search...`
-          : `Running Playwright browser scrape for ${niche} in ${city}...`,
-        "success"
-      );
-
-      let res;
-      if (mode === "direct") {
-        res = await scanMapsLeadsDirect({ niche, city, count });
-      } else {
-        try {
-          res = await scanMapsLeads({ niche, city, count });
-        } catch (browserErr: any) {
-          console.warn("Playwright browser scrape failed, engaging Fast Direct Search fallback:", browserErr);
-          showToast("Headless browser unavailable on server, auto-falling back to Fast Direct Search...", "success");
-          res = await scanMapsLeadsDirect({ niche, city, count });
-        }
+      const updated = await queueLead(id);
+      showToast(`Lead @${updated.instagram_handle || updated.business_name} queued for outreach!`, "success");
+      if (selectedLead?.id === id) {
+        setSelectedLead(updated);
       }
-
-      showToast(res.message || `Found ${res.count} Google Maps prospects and generated demos!`, "success");
-      setIsScanMapsOpen(false);
       await loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to scan Google Maps leads", "error");
-      throw err;
+      showToast(err.message || "Failed to queue lead", "error");
+    }
+  };
+
+  const handleMarkSent = async (id: number) => {
+    try {
+      const updated = await markLeadSent(id);
+      showToast(`Lead marked as Sent! 🚀`, "success");
+      if (selectedLead?.id === id) {
+        setSelectedLead(updated);
+      }
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to mark as sent", "error");
+    }
+  };
+
+  const handleRegenerateDM = async (id: number) => {
+    try {
+      setIsRegeneratingDM(true);
+      showToast("Personalizing DM with Gemini AI...", "success");
+      const updated = await regenerateLeadDM(id);
+      showToast("Personalized DM updated!", "success");
+      if (selectedLead?.id === id) {
+        setSelectedLead(updated);
+      }
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to regenerate DM", "error");
     } finally {
-      setIsScanningMaps(false);
+      setIsRegeneratingDM(false);
     }
   };
 
@@ -384,93 +364,12 @@ export default function DashboardPage() {
     }
   };
 
-  // Full AI Analysis Trigger (Lead Evaluation + Website Audit if available)
-  const handleAnalyzeLead = async (lead: Lead) => {
-    try {
-      setAnalyzingLeadId(lead.id);
-      showToast(`Running AI evaluation for "${lead.business_name}"...`, "success");
-
-      // 1. Run Lead Analysis
-      const leadAiRes = await analyzeLead({ lead_id: lead.id });
-      if (!leadAiRes.success) {
-        throw new Error(leadAiRes.error || "Lead analysis failed");
-      }
-
-      // 2. If lead has a website, also run Website Audit
-      if (lead.has_website && lead.website_url) {
-        showToast(`Auditing live website for "${lead.business_name}"...`, "success");
-        await analyzeWebsite({ lead_id: lead.id });
-      }
-
-      showToast(`AI analysis complete for "${lead.business_name}"!`, "success");
-      await loadData();
-    } catch (err: any) {
-      console.error("AI Analysis error:", err);
-      showToast(err.message || "Failed to analyze lead with AI", "error");
-    } finally {
-      setAnalyzingLeadId(null);
-    }
-  };
-
-  // Individual triggers from within the modal
-  const handleRunLeadAnalysisModal = async (lead: Lead) => {
-    try {
-      setIsModalAnalyzingLead(true);
-      const res = await analyzeLead({ lead_id: lead.id });
-      if (!res.success) throw new Error(res.error || "Lead analysis failed");
-      showToast(`Lead evaluation complete!`, "success");
-      await loadData();
-    } catch (err: any) {
-      showToast(err.message || "Failed to evaluate lead", "error");
-    } finally {
-      setIsModalAnalyzingLead(false);
-    }
-  };
-
-  const handleRunWebsiteAuditModal = async (lead: Lead) => {
-    try {
-      setIsModalAuditingWebsite(true);
-      const res = await analyzeWebsite({ lead_id: lead.id });
-      if (!res.success) {
-        throw new Error(res.error || "Website audit failed");
-      }
-      showToast(`Website audit completed successfully!`, "success");
-      await loadData();
-    } catch (err: any) {
-      showToast(err.message || "Website audit failed", "error");
-    } finally {
-      setIsModalAuditingWebsite(false);
-    }
-  };
-
-  const handleGenerateDemoModal = async (
-    lead: Lead,
-    options?: { custom_instructions?: string; theme_color?: string }
-  ) => {
-    try {
-      setIsModalGeneratingDemo(true);
-      showToast(`Generating multi-page demo for "${lead.business_name}"...`, "success");
-      const res = await generateWebsiteDemo(lead.id, options);
-      if (!res.success) {
-        throw new Error(res.error || "Failed to generate website demo");
-      }
-      showToast(`Website demo generated! 4 responsive pages ready.`, "success");
-      await loadData();
-    } catch (err: any) {
-      console.error("Demo generation error:", err);
-      showToast(err.message || "Failed to generate website demo", "error");
-    } finally {
-      setIsModalGeneratingDemo(false);
-    }
-  };
-
   const handleSaveOutreachDrafts = async (
     id: number,
     data: {
-      outreach_email_subject?: string;
-      outreach_email_body?: string;
       outreach_instagram_dm?: string;
       status?: string;
+      notes?: string;
     }
   ) => {
     const updated = await updateLead(id, data);
@@ -505,19 +404,13 @@ export default function DashboardPage() {
         isSeeding={isSeeding}
         onSeedData={handleSeedData}
         onRefresh={loadData}
-        onOpenTargetNiche={() => setIsTargetNicheOpen(true)}
-        onOpenScanInstagram={() => setIsScanInstagramOpen(true)}
-        onOpenScanMaps={() => setIsScanMapsOpen(true)}
+        onOpenScanPosts={() => setIsScanInstagramOpen(true)}
         dailyIgLimit={dailyIgLimit}
         onDailyIgLimitChange={setDailyIgLimit}
         onDispatchIgBatch={handleDispatchIgBatch}
         isDispatchingIg={isDispatchingIg}
-        igQueueCount={
-          igOutreachStatus?.pending_queue ??
-          leads.filter((l) => l.source === "Instagram Intent" && l.status !== "contacted").length
-        }
-        igSentToday={igOutreachStatus?.dispatched_today ?? 0}
         agentStatus={agentStatus}
+        onToggleAgent={handleToggleAgent}
         onOpenAgentStream={() => setIsAgentStreamOpen(true)}
       />
 
@@ -540,17 +433,15 @@ export default function DashboardPage() {
             onSearchChange={setSearch}
             statusFilter={statusFilter}
             onStatusChange={setStatusFilter}
-            hasWebsiteFilter={hasWebsiteFilter}
-            onHasWebsiteChange={setHasWebsiteFilter}
             priorityFilter={priorityFilter}
             onPriorityChange={setPriorityFilter}
             industryFilter={industryFilter}
             onIndustryChange={setIndustryFilter}
             availableIndustries={availableIndustries}
             onOpenCreateModal={() => setIsCreateOpen(true)}
-            onOpenTargetNicheModal={() => setIsTargetNicheOpen(true)}
-            onOpenScanInstagramModal={() => setIsScanInstagramOpen(true)}
-            onOpenScanMapsModal={() => setIsScanMapsOpen(true)}
+            onOpenScanPostsModal={() => setIsScanInstagramOpen(true)}
+            onDispatchBatch={handleDispatchIgBatch}
+            isDispatching={isDispatchingIg}
           />
         </div>
 
@@ -562,14 +453,12 @@ export default function DashboardPage() {
             selectedLeadIdRef.current = lead.id;
             setSelectedLead(lead);
           }}
-          onEditLead={(lead) => setEditingLead(lead)}
           onDeleteLead={handleDeleteLead}
-          onSeedDemo={handleSeedData}
-          onOpenCreate={() => setIsCreateOpen(true)}
-          onAnalyzeLead={handleAnalyzeLead}
-          analyzingLeadId={analyzingLeadId}
-          onQuickStatusUpdate={handleQuickStatusUpdate}
+          onQueueLead={handleQueueLead}
+          onMarkSent={handleMarkSent}
+          onRegenerateDM={handleRegenerateDM}
           onNotify={showToast}
+          onOpenScanPosts={() => setIsScanInstagramOpen(true)}
         />
       </main>
 
@@ -580,12 +469,10 @@ export default function DashboardPage() {
         onClose={handleCloseLeadModal}
         onUpdateStatus={handleQuickStatusUpdate}
         onSaveOutreachDrafts={handleSaveOutreachDrafts}
-        onRunLeadAnalysis={handleRunLeadAnalysisModal}
-        onRunWebsiteAudit={handleRunWebsiteAuditModal}
-        onGenerateDemo={handleGenerateDemoModal}
-        isAnalyzingLead={isModalAnalyzingLead}
-        isAuditingWebsite={isModalAuditingWebsite}
-        isGeneratingDemo={isModalGeneratingDemo}
+        onRegenerateDM={handleRegenerateDM}
+        onQueueLead={handleQueueLead}
+        onMarkSent={handleMarkSent}
+        isRegeneratingDM={isRegeneratingDM}
       />
 
       <CreateLeadModal
@@ -601,24 +488,11 @@ export default function DashboardPage() {
         onSubmit={handleUpdateLead}
       />
 
-      <TargetNicheModal
-        isOpen={isTargetNicheOpen}
-        onClose={() => setIsTargetNicheOpen(false)}
-        onDiscover={handleTargetNiche}
-      />
-
       <ScanInstagramModal
         isOpen={isScanInstagramOpen}
         onClose={() => setIsScanInstagramOpen(false)}
         onScan={handleScanInstagram}
         isLoading={isScanningInstagram}
-      />
-
-      <ScanMapsModal
-        isOpen={isScanMapsOpen}
-        onClose={() => setIsScanMapsOpen(false)}
-        onScan={handleScanMaps}
-        isLoading={isScanningMaps}
       />
 
       <AutonomousStreamModal
@@ -632,5 +506,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-

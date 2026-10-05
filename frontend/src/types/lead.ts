@@ -8,8 +8,10 @@ export interface Lead {
   email?: string | null;
   phone?: string | null;
   instagram_handle?: string | null;
+  source_post_url?: string | null;
+  comment_text?: string | null;
   source: string;
-  status: 'new' | 'analyzed' | 'scored' | 'outreach_generated' | 'demo_generated' | 'contacted' | 'converted' | 'rejected' | string;
+  status: 'Intent Detected' | 'DM Drafted' | 'DM Queued' | 'Sent' | 'Pitch Sent' | 'contacted' | 'converted' | string;
   lead_score: number;
   score_reasons?: string | null;
   website_analysis?: string | null;
@@ -32,6 +34,8 @@ export interface LeadCreateInput {
   email?: string;
   phone?: string;
   instagram_handle?: string;
+  source_post_url?: string;
+  comment_text?: string;
   source?: string;
   status?: string;
   lead_score?: number;
@@ -47,6 +51,8 @@ export interface LeadUpdateInput {
   email?: string;
   phone?: string;
   instagram_handle?: string;
+  source_post_url?: string;
+  comment_text?: string;
   source?: string;
   status?: string;
   lead_score?: number;
@@ -62,14 +68,19 @@ export interface LeadUpdateInput {
 
 export interface LeadStats {
   total_leads: number;
-  no_website_count: number;
-  has_website_count: number;
-  demos_ready_count: number;
-  outreach_ready_count: number;
-  contacted_count: number;
-  converted_count: number;
+  intent_detected_count?: number;
+  dm_drafted_count?: number;
+  dm_queued_count?: number;
+  sent_count?: number;
   average_score: number;
   status_breakdown: Record<string, number>;
+  // Legacy compatibility fields
+  no_website_count?: number;
+  has_website_count?: number;
+  demos_ready_count?: number;
+  outreach_ready_count?: number;
+  contacted_count?: number;
+  converted_count?: number;
 }
 
 export interface LeadListResponse {
@@ -161,5 +172,3 @@ export interface DemoDetailResponse {
   has_demo: boolean;
   pages: Record<string, string>;
 }
-
-

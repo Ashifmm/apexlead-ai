@@ -10,13 +10,11 @@ try:
     from app.db.session import SessionLocal
     from app.models.lead import Lead
     from app.services.instagram_scanner import instagram_scanner
-    from app.services.maps_scraper import maps_scraper
     from app.core.config import settings
 except ImportError:
     from backend.app.db.session import SessionLocal
     from backend.app.models.lead import Lead
     from backend.app.services.instagram_scanner import instagram_scanner
-    from backend.app.services.maps_scraper import maps_scraper
     from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -65,7 +63,7 @@ class AutonomousAgentService:
             hour=0, minute=0, second=0, microsecond=0
         )
         return db.query(Lead).filter(
-            Lead.status.in_(["Pitch Sent", "contacted"]),
+            Lead.status.in_(["Sent", "Pitch Sent", "contacted"]),
             Lead.updated_at >= today_start
         ).count()
 
@@ -74,7 +72,7 @@ class AutonomousAgentService:
         dispatched_today = self.get_dispatched_today_count(db)
         pending_queue = db.query(Lead).filter(
             Lead.source == "Instagram Intent",
-            Lead.status.in_(["Outreach Ready", "new", "outreach_generated"])
+            Lead.status.in_(["DM Queued", "DM Drafted", "Intent Detected", "Outreach Ready"])
         ).count()
 
         available_quota = max(0, self.daily_limit - dispatched_today)
@@ -116,16 +114,16 @@ class AutonomousAgentService:
                 )
                 return
 
-            # Find next eligible prospect in queue
+            # Find next eligible prospect in queue (prioritize DM Queued)
             lead = db.query(Lead).filter(
                 Lead.source == "Instagram Intent",
-                Lead.status.in_(["Outreach Ready", "new", "outreach_generated"])
+                Lead.status.in_(["DM Queued", "DM Drafted", "Outreach Ready"])
             ).order_by(Lead.lead_score.desc(), Lead.id.asc()).first()
 
             if not lead:
                 # No leads in queue - trigger autonomous harvester
                 self._log_event("system", "Outreach queue empty. Initiating background intent harvest...")
-                new_leads = instagram_scanner.harvest_live_intent(db, max_leads=3)
+                new_leads = instagram_scanner.scan_intent(db, keyword="need website", count=3)
                 if new_leads:
                     self._log_event("harvest", f"Autonomous harvest queued {len(new_leads)} new Instagram prospects.")
                 return
@@ -137,7 +135,7 @@ class AutonomousAgentService:
             now_ts = datetime.datetime.now(datetime.timezone.utc)
             self.last_dispatched_at = now_ts
 
-            lead.status = "Pitch Sent"
+            lead.status = "Sent"
             lead.notes = (lead.notes or "") + f"\n[Autonomous Auto-DM dispatched at {now_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}]"
             lead.updated_at = now_ts
             db.commit()
