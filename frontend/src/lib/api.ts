@@ -178,6 +178,17 @@ export async function scanMapsLeads(data: {
   });
 }
 
+export async function scanMapsLeadsDirect(data: {
+  niche: string;
+  city: string;
+  count?: number;
+}): Promise<{ message: string; niche: string; city: string; count: number; leads: Lead[] }> {
+  return request("/leads/scan-maps-direct", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export async function dispatchInstagramBatch(data: {
   daily_limit?: number;
 }): Promise<{

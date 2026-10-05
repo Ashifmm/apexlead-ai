@@ -23,6 +23,7 @@ import {
   seedNicheLeads,
   scanInstagramIntent,
   scanMapsLeads,
+  scanMapsLeadsDirect,
   dispatchInstagramBatch,
   fetchInstagramOutreachStatus,
   fetchAgentStatus,
@@ -253,16 +254,45 @@ export default function DashboardPage() {
     }
   };
 
-  const handleScanMaps = async ({ niche, city, count }: { niche: string; city: string; count: number }) => {
+  const handleScanMaps = async ({
+    niche,
+    city,
+    count,
+    mode = "direct",
+  }: {
+    niche: string;
+    city: string;
+    count: number;
+    mode?: "direct" | "browser";
+  }) => {
     setIsScanningMaps(true);
     try {
-      showToast(`Scraping 4.0+★ ${niche} in ${city} & auto-generating ultra-premium demos...`, "success");
-      const res = await scanMapsLeads({ niche, city, count });
+      showToast(
+        mode === "direct"
+          ? `Scouting 4.0+★ ${niche} in ${city} via Fast Direct Search...`
+          : `Running Playwright browser scrape for ${niche} in ${city}...`,
+        "success"
+      );
+
+      let res;
+      if (mode === "direct") {
+        res = await scanMapsLeadsDirect({ niche, city, count });
+      } else {
+        try {
+          res = await scanMapsLeads({ niche, city, count });
+        } catch (browserErr: any) {
+          console.warn("Playwright browser scrape failed, engaging Fast Direct Search fallback:", browserErr);
+          showToast("Headless browser unavailable on server, auto-falling back to Fast Direct Search...", "success");
+          res = await scanMapsLeadsDirect({ niche, city, count });
+        }
+      }
+
       showToast(res.message || `Found ${res.count} Google Maps prospects and generated demos!`, "success");
       setIsScanMapsOpen(false);
       await loadData();
     } catch (err: any) {
       showToast(err.message || "Failed to scan Google Maps leads", "error");
+      throw err;
     } finally {
       setIsScanningMaps(false);
     }
