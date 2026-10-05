@@ -23,6 +23,7 @@ import {
   Send,
 } from "lucide-react";
 import { Lead } from "@/types/lead";
+import { BACKEND_HOST } from "@/lib/api";
 
 interface LeadTableProps {
   leads: Lead[];
@@ -108,7 +109,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       city = parts[parts.length - 1].trim();
     }
     const niche = lead.industry || "your industry";
-    const demoUrl = lead.demo_url || `http://localhost:8000/demos/${lead.id}/`;
+    const demoUrl = lead.demo_url || `${BACKEND_HOST}/demos/${lead.id}/`;
 
     return (
       `Hey ${lead.business_name}, noticed your stellar ${rating}★ reviews on Google Maps!\n\n` +

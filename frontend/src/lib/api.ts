@@ -1,6 +1,17 @@
 import { FilterParams, Lead, LeadCreateInput, LeadListResponse, LeadStats, LeadUpdateInput } from "@/types/lead";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const RAW_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "https://apexlead-ai.onrender.com"
+).replace(/\/+$/, "");
+
+
+// Ensure API_BASE_URL has /api/v1 prefix for endpoints
+export const API_BASE_URL = RAW_BASE_URL.endsWith("/api/v1")
+  ? RAW_BASE_URL
+  : `${RAW_BASE_URL}/api/v1`;
+
+// Root host URL for static demos, docs, or health
+export const BACKEND_HOST = RAW_BASE_URL.replace(/\/api\/v1\/?$/, "");
 
 export class ApiError extends Error {
   status: number;

@@ -1717,8 +1717,12 @@ class WebsiteDemoGenerator:
             json.dump(manifest, f, indent=2)
 
         # 5. Formulate Hosted Demo URL
-        port = settings.BACKEND_PORT
-        demo_url = f"http://localhost:{port}/demos/{lead.id}/"
+        if getattr(settings, "ENVIRONMENT", "") == "production" or os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_URL"):
+            base_host = (os.getenv("RENDER_EXTERNAL_URL") or getattr(settings, "PUBLIC_URL", "https://apexlead-ai.onrender.com")).rstrip("/")
+            demo_url = f"{base_host}/demos/{lead.id}/"
+        else:
+            port = settings.BACKEND_PORT
+            demo_url = f"http://localhost:{port}/demos/{lead.id}/"
 
         # 6. Persist to Database
         update_fields: Dict[str, Any] = {

@@ -15,7 +15,7 @@ import {
   Bot,
   Activity
 } from "lucide-react";
-import { AgentStatus } from "@/lib/api";
+import { AgentStatus, BACKEND_HOST } from "@/lib/api";
 
 interface HeaderProps {
   isBackendConnected: boolean;
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Swagger Docs Link */}
           <a
-            href="http://localhost:8000/docs"
+            href={`${BACKEND_HOST}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden xl:flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white"

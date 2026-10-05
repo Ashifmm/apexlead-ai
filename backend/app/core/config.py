@@ -32,8 +32,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.5-flash-lite"
 
+    # Public Host URL
+    PUBLIC_URL: str = "https://apexlead-ai.onrender.com"
+
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://apexlead-ai.vercel.app,https://apexlead-ai.onrender.com"
+
 
     # Instagram Automation Credentials
     INSTAGRAM_USERNAME: str = ""

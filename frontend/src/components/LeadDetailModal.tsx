@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { Lead, WebsiteAuditResult } from "@/types/lead";
 import { getLeadPriority } from "./LeadTable";
-import { fetchDemoDetails } from "@/lib/api";
+import { fetchDemoDetails, BACKEND_HOST } from "@/lib/api";
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -225,7 +225,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       city = parts[parts.length - 1].trim();
     }
     const niche = currentLead.industry || "your industry";
-    const demoUrl = currentLead.demo_url || `http://localhost:8000/demos/${currentLead.id}/`;
+    const demoUrl = currentLead.demo_url || `${BACKEND_HOST}/demos/${currentLead.id}/`;
 
     return (
       `Hey ${currentLead.business_name}, noticed your stellar ${rating}★ reviews on Google Maps!\n\n` +
@@ -630,7 +630,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => window.open(lead.demo_url || `http://localhost:8000/demos/${lead.id}/`, "_blank")}
+                        onClick={() => window.open(lead.demo_url || `${BACKEND_HOST}/demos/${lead.id}/`, "_blank")}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition-all"
                         title="Test In New Tab"
                       >
@@ -638,7 +638,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                         <span>Test In New Tab</span>
                       </button>
                       <a
-                        href={lead.demo_url || `http://localhost:8000/demos/${lead.id}/`}
+                        href={lead.demo_url || `${BACKEND_HOST}/demos/${lead.id}/`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white"
@@ -651,7 +651,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </div>
                   <div className="relative w-full h-80 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
                     <iframe
-                      src={lead.demo_url || `http://localhost:8000/demos/${lead.id}/`}
+                      src={lead.demo_url || `${BACKEND_HOST}/demos/${lead.id}/`}
                       title={`Demo preview for ${lead.business_name}`}
                       className="w-full h-full border-0 bg-white"
                     />
@@ -1049,7 +1049,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 
           {/* TAB 5: WEBSITE DEMO GENERATOR (PHASE 6) */}
           {activeTab === "website_demo" && (() => {
-            const rawBaseUrl = lead.demo_url || `http://localhost:8000/demos/${lead.id}/`;
+            const rawBaseUrl = lead.demo_url || `${BACKEND_HOST}/demos/${lead.id}/`;
             const baseDemoUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
             const currentPreviewUrl = `${baseDemoUrl}${demoPage === "index.html" ? "" : demoPage}`;
             const hasDemo = Boolean(lead.demo_url || lead.demo_preview_html || Object.keys(demoPagesData).length > 0);

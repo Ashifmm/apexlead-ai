@@ -259,7 +259,8 @@ class GoogleMapsScraper:
                 demo_generator.generate_demo(db, lead)
                 db.refresh(lead)
 
-                demo_url = lead.demo_url or f"http://localhost:8000/demos/{lead.id}/"
+                base_host = (getattr(settings, "PUBLIC_URL", None) or os.getenv("RENDER_EXTERNAL_URL") or "https://apexlead-ai.onrender.com").rstrip("/")
+                demo_url = lead.demo_url or f"{base_host}/demos/{lead.id}/"
                 rating_val = (lead.notes or "").split("★")[0].split(":")[-1].strip() or "4.7"
 
                 # Phase 9: Polished WhatsApp Pitch with Live Demo Link
