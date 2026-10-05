@@ -119,7 +119,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       await navigator.clipboard.writeText(formattedMessage);
       setCopiedId(lead.id);
       setTimeout(() => setCopiedId(null), 2000);
-      onNotify?.("GrowthGrid pitch copied!", "success");
+      onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
     } catch {
       onNotify?.("Failed to copy pitch to clipboard", "error");
     }
@@ -137,7 +137,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     }
 
     // 2. Display bright green toast notification
-    onNotify?.("GrowthGrid pitch copied!", "success");
+    onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
 
     // 3. Open https://ig.me/m/{username} in a new browser tab
     const igDirectUrl = `https://ig.me/m/${username}`;
@@ -181,9 +181,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/20 to-rose-600/20 border border-pink-500/30 text-pink-400 mb-4 shadow-lg shadow-pink-500/10">
           <Instagram className="h-8 w-8" />
         </div>
-        <h3 className="text-base font-bold text-white">No Live Instagram Leads Detected in Last 48h</h3>
+        <h3 className="text-base font-bold text-white">No Live Instagram Leads Detected</h3>
         <p className="mt-1.5 max-w-sm text-xs text-slate-400">
-          No live inquiries matched in the active 48-hour window. Trigger a real-time live scan across Instagram reels and posts.
+          No live inquiries matched in the active window. Trigger an autonomous AI scan across Instagram reels and posts.
         </p>
         <button
           onClick={onOpenScanPosts}

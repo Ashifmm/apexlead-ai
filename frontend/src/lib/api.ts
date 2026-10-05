@@ -109,7 +109,9 @@ export async function seedSampleLeads(): Promise<{ message: string; inserted: nu
 export async function scanInstagramIntent(data: {
   niche?: string;
   days_range?: number;
+  quantity?: number;
   count?: number;
+  exclude_existing?: boolean;
   hashtag?: string;
   keyword?: string;
   target_account?: string;

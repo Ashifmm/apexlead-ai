@@ -99,7 +99,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
-      onNotify?.("GrowthGrid pitch copied!", "success");
+      onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
     } catch {
       onNotify?.("Failed to copy to clipboard", "error");
     }
@@ -130,7 +130,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     }
 
     // 2. Show a bright green toast notification
-    onNotify?.("GrowthGrid pitch copied!", "success");
+    onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
 
     // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
     const igDirectUrl = `https://ig.me/m/${handleClean}`;

@@ -216,6 +216,8 @@ export default function DashboardPage() {
     niche?: string;
     days_range?: number;
     count: number;
+    quantity?: number;
+    exclude_existing?: boolean;
     hashtag?: string;
     keyword?: string;
     target_account?: string;
@@ -228,6 +230,22 @@ export default function DashboardPage() {
       const res = await scanInstagramIntent(params);
       showToast(res.message || `Discovered ${res.count} verified high-intent leads!`, "success");
       setIsScanInstagramOpen(false);
+
+      // Immediate UI state sync: on API response, append new leads to UI state immediately and update pipeline counters
+      if (res.leads && res.leads.length > 0) {
+        setLeads((prev) => {
+          const newIds = new Set(res.leads.map((l: any) => l.id));
+          return [...res.leads, ...prev.filter((l) => !newIds.has(l.id))];
+        });
+        setStats((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            total_leads: prev.total_leads + res.leads.length,
+            dm_drafted_count: (prev.dm_drafted_count || 0) + res.leads.length,
+          };
+        });
+      }
       await loadData();
     } catch (err: any) {
       showToast(err.message || "Failed to run autonomous AI discovery", "error");

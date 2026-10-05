@@ -108,11 +108,14 @@ def scan_instagram_leads(
     - Tier 2: Comment Buyer-Intent Evaluation (AI Check with confidence >= 70).
     - Auto-generates GrowthGrid dynamic demo pitches.
     """
+    target_quantity = req.quantity or req.count or 25
     leads = instagram_scanner.scan_intent(
         db,
         niche=req.niche,
         days_range=req.days_range,
-        count=req.count,
+        quantity=target_quantity,
+        count=target_quantity,
+        exclude_existing=req.exclude_existing,
         keyword=req.keyword,
         hashtag=req.hashtag,
         target_account=req.target_account
@@ -121,12 +124,13 @@ def scan_instagram_leads(
     if len(leads) == 0:
         msg = f"No live leads met the 2-Tier AI verification threshold for {niche_label} within the last {req.days_range} days."
     else:
-        msg = f"Discovered {len(leads)} genuine live prospects from the last {req.days_range} days verified by 2-Tier AI Intelligence."
+        msg = f"Discovered {len(leads)} 100% fresh, verified leads from the last {req.days_range} days."
 
     return IGScanResponse(
         message=msg,
         niche=req.niche,
         days_range=req.days_range,
+        quantity=target_quantity,
         count=len(leads),
         leads=leads,
         hashtag=req.hashtag,
