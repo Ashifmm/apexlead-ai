@@ -173,87 +173,17 @@ class CRUDLead:
         }
 
     def seed_sample_data(self, db: Session) -> int:
-        """Seed realistic Instagram intent prospects with comments and personalized AI DMs."""
-        existing_count = db.query(Lead).count()
-        if existing_count > 0:
-            return 0
+        """
+        Pure Live Production Mode:
+        NO synthetic or mock leads. Triggers genuine real-time extraction for active prospects.
+        """
+        try:
+            from app.services.instagram_scanner import instagram_scanner
+        except ImportError:
+            from backend.app.services.instagram_scanner import instagram_scanner
 
-        sample_leads = [
-            Lead(
-                business_name="Velvet Hair Studio",
-                industry="Luxury Salon",
-                location="Instagram (#salondesign)",
-                instagram_handle="@velvet_hair_studio",
-                source="Instagram Intent",
-                status="DM Drafted",
-                lead_score=96,
-                source_post_url="https://instagram.com/p/C7x9LmP3qK1",
-                comment_text="We are expanding our salon next month and desperately need a modern website with online booking for 4 stylists. How much would this cost? DM me portfolio!",
-                score_reasons="High commercial intent: Explicit inquiry for online booking system + budget inquiry ('how much would this cost?') + request to DM portfolio.",
-                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Velvet Hair Studio. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
-                notes="Captured under #salondesign reel. High-priority lead with active stylist expansion."
-            ),
-            Lead(
-                business_name="Aura Aesthetic Dental",
-                industry="Dental Clinic",
-                location="Instagram (#smallbusinessowner)",
-                instagram_handle="@auradental_implants",
-                source="Instagram Intent",
-                status="DM Queued",
-                lead_score=94,
-                source_post_url="https://instagram.com/p/C8y2KlQ4rM2",
-                comment_text="Looking for a serious web developer to revamp our clinic website and patient appointment portal. What are your rates?",
-                score_reasons="High conversion potential: Active clinic search for qualified web developer to build patient appointment workflow.",
-                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Aura Aesthetic Dental. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
-                notes="Lead queued for automated dispatch batch."
-            ),
-            Lead(
-                business_name="Iron Foundry Strength Club",
-                industry="Fitness & Gym",
-                location="Instagram (#needwebsite)",
-                instagram_handle="@iron_foundry_gym",
-                source="Instagram Intent",
-                status="Sent",
-                lead_score=95,
-                source_post_url="https://instagram.com/p/C6w8PzR9tN3",
-                comment_text="Need a clean Shopify or Next.js website for gym memberships and merch checkout ASAP. Please dm me with pricing and turnaround.",
-                score_reasons="Immediate purchase intent: 'ASAP' timeline mentioned with explicit request for pricing and turnaround on membership checkout.",
-                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Iron Foundry Strength Club. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
-                notes="[Auto-DM Dispatched with safe humanized interval 48s]"
-            ),
-            Lead(
-                business_name="Cinnamon & Sage Bakehouse",
-                industry="Artisan Cafe",
-                location="Instagram (#ecommercebrand)",
-                instagram_handle="@cinnamon_sage_bakehouse",
-                source="Instagram Intent",
-                status="DM Drafted",
-                lead_score=91,
-                source_post_url="https://instagram.com/p/C9t1VxY5sL4",
-                comment_text="Our bakery is launching wholesale orders online. Need an ecommerce site to take catering deposits. How much for a custom shop?",
-                score_reasons="B2B Catering revenue signal: Looking to collect online deposits and wholesale orders digitally.",
-                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Cinnamon & Sage Bakehouse. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
-                notes="Ready for review and queueing."
-            ),
-            Lead(
-                business_name="Obsidian Auto Detailing",
-                industry="Auto Detailing",
-                location="Instagram (#smallbusinessowner)",
-                instagram_handle="@obsidian_auto_detail",
-                source="Instagram Intent",
-                status="Intent Detected",
-                lead_score=89,
-                source_post_url="https://instagram.com/p/C5q7JnB2mK5",
-                comment_text="Our current site is broken on mobile. Looking to hire a web developer for full redesign with instant quote calculator. DM me!",
-                score_reasons="Identified pain point: Broken mobile UX and manual quoting taking up too much time.",
-                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Obsidian Auto Detailing. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
-                notes="New intent detected from competitor agency comment section."
-            )
-        ]
-
-        db.add_all(sample_leads)
-        db.commit()
-        return len(sample_leads)
+        leads = instagram_scanner.scan_intent(db, keyword="need a website", count=5)
+        return len(leads)
 
 
 crud_lead = CRUDLead()

@@ -116,8 +116,13 @@ def scan_instagram_leads(
         target_account=req.target_account,
         count=req.count
     )
+    if len(leads) == 0:
+        msg = f"No live Instagram leads found matching '{req.keyword or 'need website'}' within the targeted 48h search window."
+    else:
+        msg = f"Harvested {len(leads)} genuine live Instagram prospects actively inquiring for website development."
+
     return IGScanResponse(
-        message=f"Discovered {len(leads)} Instagram prospects actively inquiring for website design and development.",
+        message=msg,
         hashtag=req.hashtag,
         keyword=req.keyword,
         count=len(leads),

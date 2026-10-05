@@ -99,7 +99,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
-      onNotify?.("Message copied to clipboard!", "success");
+      onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
     } catch {
       onNotify?.("Failed to copy to clipboard", "error");
     }
@@ -129,8 +129,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       // ignore
     }
 
-    // 2. Show a quick toast notification: "Message copied to clipboard! Opening Instagram..."
-    onNotify?.("Message copied to clipboard! Opening Instagram...", "success");
+    // 2. Show a bright green toast notification
+    onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
 
     // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
     const igDirectUrl = `https://ig.me/m/${handleClean}`;
@@ -295,24 +295,39 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               </div>
 
               {/* Action dispatch buttons */}
-              <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <div className="flex flex-wrap items-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={handleOneClickWebDM}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 py-2.5 px-4 text-xs font-bold text-white shadow-lg shadow-pink-500/20 hover:opacity-95 active:scale-95 transition-all"
-                  title="Automatically copy GrowthGrid message to clipboard & open direct message in Instagram"
+                  className="flex-1 min-w-[180px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 py-2.5 px-4 text-xs font-bold text-white shadow-lg shadow-pink-500/20 hover:opacity-95 active:scale-95 transition-all"
+                  title="Copy pitch and open direct message in Instagram"
                 >
                   <Send className="h-4 w-4" />
-                  <span>Copy & Open IG DM</span>
+                  <span>Open Instagram DM</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopy(draftDM || getModalGrowthGridDM(lead, lead.outreach_instagram_dm), "dm_modal")}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 py-2.5 px-3.5 text-xs font-semibold text-slate-200 transition-all active:scale-95"
+                  title="Copy formatted pitch to clipboard"
+                >
+                  {copiedField === "dm_modal" ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-slate-400" />
+                  )}
+                  <span>{copiedField === "dm_modal" ? "Copied" : "Copy Pitch"}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleQueue}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 py-2.5 px-4 text-xs font-bold text-purple-300 transition-all active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 py-2.5 px-3 text-xs font-bold text-purple-300 transition-all active:scale-95"
+                  title="Queue lead for background auto-DM scheduler"
                 >
-                  <Clock className="h-4 w-4" />
-                  <span>Queue for Auto-DM Dispatch</span>
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Queue Auto-DM</span>
                 </button>
               </div>
 

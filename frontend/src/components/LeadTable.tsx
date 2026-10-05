@@ -113,34 +113,34 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     }
   };
 
-  const handleCopyDM = async (lead: Lead) => {
-    const textToCopy = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
+  const handleCopyPitch = async (lead: Lead) => {
+    const formattedMessage = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
     try {
-      await navigator.clipboard.writeText(textToCopy);
+      await navigator.clipboard.writeText(formattedMessage);
       setCopiedId(lead.id);
       setTimeout(() => setCopiedId(null), 2000);
-      onNotify?.(`Message copied to clipboard for ${lead.instagram_handle || lead.business_name}!`, "success");
+      onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
     } catch {
-      onNotify?.("Failed to copy to clipboard", "error");
+      onNotify?.("Failed to copy pitch to clipboard", "error");
     }
   };
 
-  const handleOneClickWebDM = async (lead: Lead) => {
-    const handleClean = (lead.instagram_handle || "instagram").replace("@", "").trim();
-    const dmCopy = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
+  const handleOpenInstagramDM = async (lead: Lead) => {
+    const username = (lead.instagram_handle || "instagram").replace("@", "").trim();
+    const formattedMessage = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
 
-    // 1. Automatically copy this generated message to the user's clipboard
+    // 1. Immediately execute navigator.clipboard.writeText(formattedMessage)
     try {
-      await navigator.clipboard.writeText(dmCopy);
+      await navigator.clipboard.writeText(formattedMessage);
     } catch {
       // ignore
     }
 
-    // 2. Show a quick toast notification: "Message copied to clipboard! Opening Instagram..."
-    onNotify?.("Message copied to clipboard! Opening Instagram...", "success");
+    // 2. Display bright green toast notification
+    onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
 
-    // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
-    const igDirectUrl = `https://ig.me/m/${handleClean}`;
+    // 3. Open https://ig.me/m/{username} in a new browser tab
+    const igDirectUrl = `https://ig.me/m/${username}`;
     window.open(igDirectUrl, "_blank", "noopener,noreferrer");
 
     // 4. Mark status as Sent in database
@@ -181,16 +181,16 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-600/20 to-rose-600/20 border border-pink-500/30 text-pink-400 mb-4 shadow-lg shadow-pink-500/10">
           <Instagram className="h-8 w-8" />
         </div>
-        <h3 className="text-base font-bold text-white">No Instagram Prospects Detected Yet</h3>
+        <h3 className="text-base font-bold text-white">No Live Instagram Leads Detected in Last 48h</h3>
         <p className="mt-1.5 max-w-sm text-xs text-slate-400">
-          Scan target hashtags or competitor accounts to capture active prospects inquiring for websites and ecommerce.
+          No live inquiries matched in the active 48-hour window. Trigger a real-time live scan across Instagram reels and posts.
         </p>
         <button
           onClick={onOpenScanPosts}
           className="mt-5 flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-pink-500/25 hover:opacity-95 active:scale-95 transition-all"
         >
           <Sparkles className="h-4 w-4" />
-          <span>Scan Target Posts / Comments</span>
+          <span>Scan Live Instagram Leads (Real-Time)</span>
         </button>
       </div>
     );
@@ -298,9 +298,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleCopyDM(lead)}
+                          onClick={() => handleCopyPitch(lead)}
                           className="flex items-center gap-1 rounded px-1.5 py-0.5 bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 transition-colors"
-                          title="Copy DM to clipboard"
+                          title="Copy GrowthGrid pitch to clipboard"
                         >
                           {copiedId === lead.id ? (
                             <>
@@ -329,15 +329,35 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   {/* Quick Actions */}
                   <td className="py-3 pl-3 pr-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
-                      {/* 1-Click "Copy & Open IG DM" button */}
+                      {/* Open Instagram DM button */}
                       <button
                         type="button"
-                        onClick={() => handleOneClickWebDM(lead)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-90 active:scale-95 transition-all"
-                        title="Copy GrowthGrid template & open direct message in Instagram"
+                        onClick={() => handleOpenInstagramDM(lead)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-90 active:scale-95 transition-all"
+                        title="Copy GrowthGrid pitch & open direct message in Instagram"
                       >
                         <Send className="h-3 w-3" />
-                        <span>Copy & Open IG DM</span>
+                        <span>Open Instagram DM</span>
+                      </button>
+
+                      {/* Separate small Copy Pitch button */}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPitch(lead)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-slate-300 hover:text-white transition-all active:scale-95"
+                        title="Copy GrowthGrid pitch text to clipboard"
+                      >
+                        {copiedId === lead.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            <span className="text-emerald-400 text-[10px]">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3 text-pink-400" />
+                            <span className="text-[10px]">Copy Pitch</span>
+                          </>
+                        )}
                       </button>
 
                       {/* Queue for Auto-DM */}

@@ -57,17 +57,17 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-white">
-                ApexLead{" "}
+                GrowthGrid{" "}
                 <span className="bg-gradient-to-r from-pink-400 via-rose-300 to-amber-400 bg-clip-text text-transparent">
-                  AI
+                  PRO
                 </span>
               </h1>
               <span className="rounded-full border border-pink-500/30 bg-pink-500/10 px-2 py-0.5 text-[11px] font-bold text-pink-300">
-                Instagram Auto-DM Engine
+                100% Pure Instagram Engine
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Target Post & Comment Listener • AI Dynamic DMs • Safe Rate-Limited Dispatch
+              Live Real-Time Lead Harvester • Instant Pitch Auto-Copy • Zero Mock Data
             </p>
           </div>
         </div>

@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ApexLead AI | Web Agency Lead Generation System",
-  description: "AI-Powered Lead Generation, Website Analysis, Personalized Demos, and Outreach for Web Agencies.",
+  title: "GrowthGrid | 100% Pure Instagram Lead Engine",
+  description: "Real-time Instagram lead generation and autonomous GrowthGrid outreach system. 100% genuine live data.",
 };
 
 export default function RootLayout({

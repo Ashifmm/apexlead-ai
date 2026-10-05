@@ -382,13 +382,17 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#0B0F19]">
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900/95 px-4 py-3 text-sm shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-2">
+        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-2 ${
+          toast.type === "success"
+            ? "border-emerald-500 bg-emerald-950/95 text-emerald-200 shadow-emerald-950/50"
+            : "border-rose-500/50 bg-rose-950/95 text-rose-200 shadow-rose-950/50"
+        }`}>
           {toast.type === "success" ? (
             <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
           ) : (
             <AlertTriangle className="h-5 w-5 text-rose-400 flex-shrink-0" />
           )}
-          <span className="text-slate-200">{toast.message}</span>
+          <span className="font-medium">{toast.message}</span>
           <button
             onClick={() => setToast(null)}
             className="ml-2 rounded-lg p-1 text-slate-400 hover:text-white"
