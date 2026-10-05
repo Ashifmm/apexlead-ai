@@ -39,6 +39,20 @@ interface LeadDetailModalProps {
   onQueueLead?: (id: number) => Promise<void>;
   onMarkSent?: (id: number) => Promise<void>;
   isRegeneratingDM?: boolean;
+  onNotify?: (message: string, type?: "success" | "error") => void;
+}
+
+function getModalGrowthGridDM(
+  lead: Lead,
+  existingDM?: string | null
+): string {
+  if (existingDM && existingDM.trim() && existingDM.includes("— GrowthGrid")) {
+    return existingDM.trim();
+  }
+  const name = (lead.business_name && lead.business_name.trim())
+    ? lead.business_name.trim()
+    : ((lead.instagram_handle && lead.instagram_handle.trim()) ? lead.instagram_handle.replace(/^@/, "").trim() : "your business");
+  return `Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for ${name}. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid`;
 }
 
 export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
@@ -51,6 +65,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   onQueueLead,
   onMarkSent,
   isRegeneratingDM = false,
+  onNotify,
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "dm_generator">("dm_generator");
@@ -60,7 +75,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 
   useEffect(() => {
     if (lead) {
-      setDraftDM(lead.outreach_instagram_dm || "");
+      setDraftDM(getModalGrowthGridDM(lead, lead.outreach_instagram_dm));
       setNotes(lead.notes || "");
     }
   }, [lead]);
@@ -84,8 +99,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
+      onNotify?.("Message copied to clipboard!", "success");
     } catch {
-      // ignore
+      onNotify?.("Failed to copy to clipboard", "error");
     }
   };
 
@@ -104,17 +120,23 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 
   const handleOneClickWebDM = async () => {
     const handleClean = (lead.instagram_handle || "instagram").replace("@", "").trim();
-    const dmText = draftDM || lead.outreach_instagram_dm || `Hey @${handleClean}!`;
+    const dmText = draftDM || getModalGrowthGridDM(lead, lead.outreach_instagram_dm);
 
+    // 1. Automatically copy this generated message to the user's clipboard
     try {
       await navigator.clipboard.writeText(dmText);
     } catch {
       // ignore
     }
 
+    // 2. Show a quick toast notification: "Message copied to clipboard! Opening Instagram..."
+    onNotify?.("Message copied to clipboard! Opening Instagram...", "success");
+
+    // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
     const igDirectUrl = `https://ig.me/m/${handleClean}`;
     window.open(igDirectUrl, "_blank", "noopener,noreferrer");
 
+    // 4. Mark status as Sent in database
     if (onMarkSent) {
       await onMarkSent(lead.id);
     }
@@ -185,7 +207,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             }`}
           >
             <Sparkles className="h-4 w-4" />
-            <span>AI Dynamic DM Generator</span>
+            <span>Tailored GrowthGrid Template Preview</span>
           </button>
           <button
             onClick={() => setActiveTab("overview")}
@@ -220,19 +242,17 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             </div>
           </div>
 
-          {/* TAB 1: AI DYNAMIC DM GENERATOR */}
+          {/* TAB 1: TAILORED GROWTHGRID TEMPLATE PREVIEW */}
           {activeTab === "dm_generator" && (
             <div className="space-y-4">
               {/* Context formula guide */}
               <div className="rounded-xl border border-pink-500/20 bg-pink-500/5 p-3.5 text-xs text-pink-200/90 space-y-1">
                 <div className="font-bold text-pink-300 flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>3-Part Hyper-Personalized Outreach Formula:</span>
+                  <span>GrowthGrid High-Converting Demo Outreach:</span>
                 </div>
                 <p className="text-[11px] text-slate-300">
-                  <span className="text-pink-400 font-semibold">1.</span> Acknowledge what they commented on +{" "}
-                  <span className="text-pink-400 font-semibold">2.</span> Mention specific {lead.industry || "agency"} expertise +{" "}
-                  <span className="text-pink-400 font-semibold">3.</span> Low-friction casual CTA.
+                  Offers a free, zero-pressure demo website for <span className="text-pink-300 font-semibold">{lead.business_name || `@${handleClean}`}</span> to convert comments into paying clients.
                 </p>
               </div>
 
@@ -280,9 +300,10 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   type="button"
                   onClick={handleOneClickWebDM}
                   className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 py-2.5 px-4 text-xs font-bold text-white shadow-lg shadow-pink-500/20 hover:opacity-95 active:scale-95 transition-all"
+                  title="Automatically copy GrowthGrid message to clipboard & open direct message in Instagram"
                 >
                   <Send className="h-4 w-4" />
-                  <span>1-Click Open IG & Mark Sent</span>
+                  <span>Copy & Open IG DM</span>
                 </button>
 
                 <button

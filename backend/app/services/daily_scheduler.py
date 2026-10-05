@@ -48,7 +48,7 @@ class AutonomousAgentService:
         event = {
             "id": f"evt_{int(now.timestamp() * 1000)}",
             "timestamp": now.strftime("%H:%M:%S UTC"),
-            "event_type": event_type,  # 'harvest', 'dm_sent', 'quota', 'system', 'maps'
+            "event_type": event_type,  # 'harvest', 'dm_sent', 'quota', 'system'
             "message": message,
             "meta": meta or {}
         }

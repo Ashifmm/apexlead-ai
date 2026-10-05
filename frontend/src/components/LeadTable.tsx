@@ -26,6 +26,19 @@ export function getLeadPriority(lead: Lead): "High" | "Medium" | "Low" {
   return "Low";
 }
 
+export function formatGrowthGridDM(
+  lead: { business_name?: string | null; instagram_handle?: string | null },
+  existingDM?: string | null
+): string {
+  if (existingDM && existingDM.trim() && existingDM.includes("— GrowthGrid")) {
+    return existingDM.trim();
+  }
+  const name = (lead.business_name && lead.business_name.trim())
+    ? lead.business_name.trim()
+    : ((lead.instagram_handle && lead.instagram_handle.trim()) ? lead.instagram_handle.replace(/^@/, "").trim() : "your business");
+  return `Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for ${name}. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid`;
+}
+
 interface LeadTableProps {
   leads: Lead[];
   loading: boolean;
@@ -101,12 +114,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   };
 
   const handleCopyDM = async (lead: Lead) => {
-    const textToCopy = lead.outreach_instagram_dm || `Hey ${lead.instagram_handle || ""}! Saw your comment regarding websites.`;
+    const textToCopy = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedId(lead.id);
       setTimeout(() => setCopiedId(null), 2000);
-      onNotify?.(`Copied personalized DM for ${lead.instagram_handle || lead.business_name}!`, "success");
+      onNotify?.(`Message copied to clipboard for ${lead.instagram_handle || lead.business_name}!`, "success");
     } catch {
       onNotify?.("Failed to copy to clipboard", "error");
     }
@@ -114,24 +127,26 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
   const handleOneClickWebDM = async (lead: Lead) => {
     const handleClean = (lead.instagram_handle || "instagram").replace("@", "").trim();
-    const dmCopy = lead.outreach_instagram_dm || `Hey @${handleClean}! Saw your comment regarding websites.`;
+    const dmCopy = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
 
-    // 1. Copy tailored DM to clipboard
+    // 1. Automatically copy this generated message to the user's clipboard
     try {
       await navigator.clipboard.writeText(dmCopy);
     } catch {
       // ignore
     }
 
-    // 2. Open Instagram Direct Message in new tab
+    // 2. Show a quick toast notification: "Message copied to clipboard! Opening Instagram..."
+    onNotify?.("Message copied to clipboard! Opening Instagram...", "success");
+
+    // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
     const igDirectUrl = `https://ig.me/m/${handleClean}`;
     window.open(igDirectUrl, "_blank", "noopener,noreferrer");
 
-    // 3. Mark status as Sent in database
+    // 4. Mark status as Sent in database
     if (onMarkSent) {
       try {
         await onMarkSent(lead.id);
-        onNotify?.(`Opened Instagram DM for @${handleClean} & marked as Sent!`, "success");
       } catch {
         // ignore
       }
@@ -191,7 +206,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               <th className="py-3.5 px-3">Intent Score</th>
               <th className="py-3.5 px-3">Source Post</th>
               <th className="py-3.5 px-3 min-w-[240px]">Original Comment</th>
-              <th className="py-3.5 px-3 min-w-[280px]">AI Tailored DM</th>
+              <th className="py-3.5 px-3 min-w-[280px]">Tailored GrowthGrid Template Preview</th>
               <th className="py-3.5 px-3">Dispatch Status</th>
               <th className="py-3.5 pl-3 pr-4 text-right">Quick Actions</th>
             </tr>
@@ -273,13 +288,13 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     </div>
                   </td>
 
-                  {/* AI Tailored DM */}
+                  {/* Tailored GrowthGrid Template Preview */}
                   <td className="py-3 px-3">
                     <div className="relative rounded-xl border border-pink-500/20 bg-pink-500/5 p-2.5 text-[11px] text-slate-200 leading-relaxed max-w-md group/dm">
                       <div className="flex items-center justify-between pb-1 mb-1 border-b border-pink-500/20 text-[10px] text-pink-300 font-semibold">
                         <span className="flex items-center gap-1">
                           <Sparkles className="h-3 w-3 text-pink-400" />
-                          <span>Context-Aware Tailored Pitch</span>
+                          <span>GrowthGrid Demo Offer</span>
                         </span>
                         <button
                           type="button"
@@ -300,7 +315,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                           )}
                         </button>
                       </div>
-                      <p className="line-clamp-2">{lead.outreach_instagram_dm || "No tailored DM drafted yet."}</p>
+                      <p className="line-clamp-2 text-slate-300 font-sans whitespace-pre-line">
+                        {formatGrowthGridDM(lead, lead.outreach_instagram_dm)}
+                      </p>
                     </div>
                   </td>
 
@@ -312,15 +329,15 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   {/* Quick Actions */}
                   <td className="py-3 pl-3 pr-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
-                      {/* 1-Click Open in IG Web & Copy */}
+                      {/* 1-Click "Copy & Open IG DM" button */}
                       <button
                         type="button"
                         onClick={() => handleOneClickWebDM(lead)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-90 active:scale-95 transition-all"
-                        title="Copy AI DM, open in Instagram Web, and mark as Sent"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-90 active:scale-95 transition-all"
+                        title="Copy GrowthGrid template & open direct message in Instagram"
                       >
                         <Send className="h-3 w-3" />
-                        <span>1-Click IG DM</span>
+                        <span>Copy & Open IG DM</span>
                       </button>
 
                       {/* Queue for Auto-DM */}

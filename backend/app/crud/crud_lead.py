@@ -190,7 +190,7 @@ class CRUDLead:
                 source_post_url="https://instagram.com/p/C7x9LmP3qK1",
                 comment_text="We are expanding our salon next month and desperately need a modern website with online booking for 4 stylists. How much would this cost? DM me portfolio!",
                 score_reasons="High commercial intent: Explicit inquiry for online booking system + budget inquiry ('how much would this cost?') + request to DM portfolio.",
-                outreach_instagram_dm="Hey @velvet_hair_studio! Saw your comment asking about website pricing and online booking for 4 stylists. We specialize in ultra-fast, high-converting booking portals for luxury salons that fill empty chairs automatically. Put together a quick visual concept for you — mind if I drop the preview link here?",
+                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Velvet Hair Studio. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
                 notes="Captured under #salondesign reel. High-priority lead with active stylist expansion."
             ),
             Lead(
@@ -204,7 +204,7 @@ class CRUDLead:
                 source_post_url="https://instagram.com/p/C8y2KlQ4rM2",
                 comment_text="Looking for a serious web developer to revamp our clinic website and patient appointment portal. What are your rates?",
                 score_reasons="High conversion potential: Active clinic search for qualified web developer to build patient appointment workflow.",
-                outreach_instagram_dm="Hey @auradental_implants! Saw your comment about revamping your clinic's patient appointment portal. We build high-trust, HIPAA-compliant dental websites that make scheduling seamless on mobile. Put together a quick interactive prototype for your practice — mind if I send over the link?",
+                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Aura Aesthetic Dental. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
                 notes="Lead queued for automated dispatch batch."
             ),
             Lead(
@@ -218,7 +218,7 @@ class CRUDLead:
                 source_post_url="https://instagram.com/p/C6w8PzR9tN3",
                 comment_text="Need a clean Shopify or Next.js website for gym memberships and merch checkout ASAP. Please dm me with pricing and turnaround.",
                 score_reasons="Immediate purchase intent: 'ASAP' timeline mentioned with explicit request for pricing and turnaround on membership checkout.",
-                outreach_instagram_dm="Hey @iron_foundry_gym! Saw your comment about needing a clean membership & merch checkout website ASAP. We specialize in fast Next.js & Shopify fitness platforms that automate recurring gym signups. Put together a live concept preview for you — mind if I drop the link here?",
+                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Iron Foundry Strength Club. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
                 notes="[Auto-DM Dispatched with safe humanized interval 48s]"
             ),
             Lead(
@@ -232,7 +232,7 @@ class CRUDLead:
                 source_post_url="https://instagram.com/p/C9t1VxY5sL4",
                 comment_text="Our bakery is launching wholesale orders online. Need an ecommerce site to take catering deposits. How much for a custom shop?",
                 score_reasons="B2B Catering revenue signal: Looking to collect online deposits and wholesale orders digitally.",
-                outreach_instagram_dm="Hey @cinnamon_sage_bakehouse! Saw your comment about launching online wholesale ordering and catering deposits. We build custom ecommerce flows for artisan bakeries that make wholesale reordering effortless. Built a quick visual concept for you — mind if I share the preview?",
+                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Cinnamon & Sage Bakehouse. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
                 notes="Ready for review and queueing."
             ),
             Lead(
@@ -246,7 +246,7 @@ class CRUDLead:
                 source_post_url="https://instagram.com/p/C5q7JnB2mK5",
                 comment_text="Our current site is broken on mobile. Looking to hire a web developer for full redesign with instant quote calculator. DM me!",
                 score_reasons="Identified pain point: Broken mobile UX and manual quoting taking up too much time.",
-                outreach_instagram_dm="Hey @obsidian_auto_detail! Saw your comment about needing an instant quote calculator and mobile fix for your detailing studio. We build interactive package selectors and ceramic coating booking sites that 2x inbound requests. Would love to show you a quick prototype!",
+                outreach_instagram_dm="Hi 👋\n\nI create modern websites for businesses and I’d love to make a free demo website for Obsidian Auto Detailing. 🌐\n\nYou can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\nShould I create a demo for you?\n\n— GrowthGrid",
                 notes="New intent detected from competitor agency comment section."
             )
         ]

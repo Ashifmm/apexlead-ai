@@ -72,8 +72,8 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Add Target Business</h2>
-              <p className="text-xs text-slate-400">Add a prospect to your web agency pipeline</p>
+              <h2 className="text-base font-bold text-white">Add Instagram Prospect</h2>
+              <p className="text-xs text-slate-400">Add a prospect to your Instagram outreach pipeline</p>
             </div>
           </div>
           <button
@@ -152,25 +152,25 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {/* Email */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Instagram Handle */}
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
-                Email
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Instagram Handle
               </label>
               <input
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="contact@biz.com"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+                type="text"
+                value={formData.instagram_handle || ""}
+                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                placeholder="@business"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-pink-500"
               />
             </div>
 
             {/* Phone */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1">
-                Phone
+                Phone (Optional)
               </label>
               <input
                 type="tel"
@@ -180,33 +180,19 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                 className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
               />
             </div>
-
-            {/* Instagram */}
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
-                Instagram
-              </label>
-              <input
-                type="text"
-                value={formData.instagram_handle || ""}
-                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
-                placeholder="@business"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
-              />
-            </div>
           </div>
 
           {/* Notes */}
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1">
-              Internal Notes
+              Internal Notes / Comment Context
             </label>
             <textarea
               rows={2}
               value={formData.notes || ""}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="e.g. Found on Google Maps, lots of positive reviews but terrible/missing site."
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              placeholder="e.g. Inquired under #salondesign asking for online booking site."
+              className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-pink-500"
             />
           </div>
 

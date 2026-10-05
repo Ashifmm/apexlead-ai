@@ -187,62 +187,26 @@ class GeminiService:
         self,
         handle: str,
         business_name: str,
-        industry: str,
-        comment_text: str,
+        industry: str = "",
+        comment_text: str = "",
         post_context: Optional[str] = None
     ) -> str:
         """
-        Context-Aware AI Dynamic DM Generator:
-        Formula:
-        1. Acknowledge what they commented on + post context
-        2. Mention specific expertise relevant to their vertical
-        3. Casual CTA inviting them to see a quick prototype or chat
+        Instagram Outreach Message Template:
+        Generates the standard GrowthGrid demo offer with dynamic business name replacement.
         """
-        clean_handle = handle if handle.startswith("@") else f"@{handle}"
+        target_name = (business_name or "").strip()
+        if not target_name:
+            target_name = (handle or "").strip().lstrip("@")
+        if not target_name:
+            target_name = "your business"
 
-        if self.is_configured:
-            prompt = f"""
-Write an authentic, hyper-personalized Instagram DM from a boutique web agency to an active prospect who commented on Instagram.
-
-Target Lead:
-- Instagram Handle: {clean_handle}
-- Business/Name: {business_name}
-- Industry: {industry}
-- Comment they wrote: "{comment_text}"
-- Post Context: {post_context or 'Target design/ecommerce post'}
-
-Formula to strictly follow:
-1. Acknowledge what they commented on (cite their comment or inquiry naturally).
-2. Mention our agency's specific expertise in {industry} (e.g. mobile bookings, Shopify conversions, custom design).
-3. Low friction, casual CTA inviting them to see a quick tailored prototype.
-
-Rules:
-- 2 to 3 sentences total.
-- Keep it casual, friendly, and human (NO corporate buzzwords, NO "I hope this finds you well").
-- Greeting: "Hey {clean_handle}!"
-Return ONLY the raw DM text.
-"""
-            try:
-                dm = self.generate_text(
-                    prompt,
-                    system_instruction="You are a talented agency designer writing natural, non-spammy, high-converting Instagram direct messages."
-                )
-                if dm and len(dm.strip()) > 20:
-                    clean_dm = dm.strip().strip('"').strip("'")
-                    return clean_dm
-            except Exception as e:
-                logger.warning(f"Gemini DM generation error, using dynamic formula fallback: {e}")
-
-        # Deterministic formulaic fallback
-        comment_snippet = (comment_text or "").strip().rstrip("?.!")
-        if len(comment_snippet) > 65:
-            comment_snippet = comment_snippet[:62] + "..."
-
-        ind = industry or "modern"
         return (
-            f"Hey {clean_handle}! Saw your comment: \"{comment_snippet}\". "
-            f"We build ultra-fast, high-converting websites and booking portals specifically tailored for {ind} brands to turn followers into paying clients. "
-            f"Put together a quick visual concept for you — mind if I drop the preview link here?"
+            f"Hi 👋\n\n"
+            f"I create modern websites for businesses and I’d love to make a free demo website for {target_name}. 🌐\n\n"
+            f"You can check the demo first, and if you like it, we can discuss the next steps and pricing. No pressure! 😊\n\n"
+            f"Should I create a demo for you?\n\n"
+            f"— GrowthGrid"
         )
 
 

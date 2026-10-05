@@ -175,14 +175,14 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Email</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Instagram Handle</label>
               <input
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 outline-none focus:border-indigo-500"
+                type="text"
+                value={formData.instagram_handle || ""}
+                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 outline-none focus:border-pink-500"
               />
             </div>
             <div>
@@ -191,15 +191,6 @@ export const EditLeadModal: React.FC<EditLeadModalProps> = ({
                 type="tel"
                 value={formData.phone || ""}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Instagram</label>
-              <input
-                type="text"
-                value={formData.instagram_handle || ""}
-                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
                 className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 outline-none focus:border-indigo-500"
               />
             </div>

@@ -174,7 +174,7 @@ export async function updateLeadPipelineStatus(leadId: number, pipelineStatus: s
 export interface AgentEvent {
   id: string;
   timestamp: string;
-  event_type: "harvest" | "dm_sent" | "quota" | "system" | "maps";
+  event_type: "harvest" | "dm_sent" | "quota" | "system";
   message: string;
   meta?: Record<string, any>;
 }

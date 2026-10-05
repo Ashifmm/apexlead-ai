@@ -473,6 +473,7 @@ export default function DashboardPage() {
         onQueueLead={handleQueueLead}
         onMarkSent={handleMarkSent}
         isRegeneratingDM={isRegeneratingDM}
+        onNotify={showToast}
       />
 
       <CreateLeadModal

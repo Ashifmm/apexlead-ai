@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Sparkles,
   Send,
-  MapPin,
   Instagram,
   CheckCircle2,
   Clock,
@@ -201,9 +200,6 @@ export const AutonomousStreamModal: React.FC<AutonomousStreamModalProps> = ({
                 } else if (evt.event_type === "quota") {
                   badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/30";
                   Icon = AlertCircle;
-                } else if (evt.event_type === "maps") {
-                  badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/30";
-                  Icon = MapPin;
                 }
 
                 return (
