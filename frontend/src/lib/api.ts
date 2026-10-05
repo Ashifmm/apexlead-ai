@@ -107,11 +107,12 @@ export async function seedSampleLeads(): Promise<{ message: string; inserted: nu
 }
 
 export async function scanInstagramIntent(data: {
+  niche?: string;
+  count?: number;
   hashtag?: string;
   keyword?: string;
   target_account?: string;
-  count?: number;
-}): Promise<{ message: string; hashtag?: string; keyword?: string; count: number; leads: Lead[] }> {
+}): Promise<{ message: string; niche?: string; count: number; leads: Lead[] }> {
   return request("/leads/scan-instagram", {
     method: "POST",
     body: JSON.stringify(data),

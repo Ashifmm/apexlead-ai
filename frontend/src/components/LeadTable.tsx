@@ -119,7 +119,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       await navigator.clipboard.writeText(formattedMessage);
       setCopiedId(lead.id);
       setTimeout(() => setCopiedId(null), 2000);
-      onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
+      onNotify?.("GrowthGrid pitch copied!", "success");
     } catch {
       onNotify?.("Failed to copy pitch to clipboard", "error");
     }
@@ -137,7 +137,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     }
 
     // 2. Display bright green toast notification
-    onNotify?.("GrowthGrid pitch copied to clipboard! Just paste (Ctrl+V) in the Instagram chat.", "success");
+    onNotify?.("GrowthGrid pitch copied!", "success");
 
     // 3. Open https://ig.me/m/{username} in a new browser tab
     const igDirectUrl = `https://ig.me/m/${username}`;
@@ -202,10 +202,10 @@ export const LeadTable: React.FC<LeadTableProps> = ({
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              <th className="py-3.5 pl-4 pr-3">Lead Profile (@handle)</th>
+              <th className="py-3.5 pl-4 pr-3">Prospect (@handle & Business)</th>
               <th className="py-3.5 px-3">Intent Score</th>
-              <th className="py-3.5 px-3">Source Post</th>
-              <th className="py-3.5 px-3 min-w-[240px]">Original Comment</th>
+              <th className="py-3.5 px-3">Post Topic & Link</th>
+              <th className="py-3.5 px-3 min-w-[240px]">Exact Buyer Comment</th>
               <th className="py-3.5 px-3 min-w-[280px]">Tailored GrowthGrid Template Preview</th>
               <th className="py-3.5 px-3">Dispatch Status</th>
               <th className="py-3.5 pl-3 pr-4 text-right">Quick Actions</th>
@@ -265,21 +265,28 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Source Post */}
+                  {/* Post Topic & Link */}
                   <td className="py-3 px-3 whitespace-nowrap">
-                    <a
-                      href={postUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-white hover:border-slate-700 transition-all"
-                    >
-                      <Hash className="h-3 w-3 text-pink-400" />
-                      <span>p/{postCode.slice(0, 8)}</span>
-                      <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
-                    </a>
+                    <div className="space-y-1">
+                      <span className="inline-block rounded-md bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 text-[10px] font-semibold text-pink-300 max-w-[140px] truncate">
+                        {lead.industry || "Business Growth"}
+                      </span>
+                      <div>
+                        <a
+                          href={postUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white hover:border-slate-700 transition-all"
+                        >
+                          <Hash className="h-2.5 w-2.5 text-pink-400" />
+                          <span>p/{postCode.slice(0, 8)}</span>
+                          <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
+                        </a>
+                      </div>
+                    </div>
                   </td>
 
-                  {/* Original Comment */}
+                  {/* Exact Buyer Comment */}
                   <td className="py-3 px-3">
                     <div className="rounded-xl border border-slate-800/90 bg-slate-900/60 p-2 text-[11px] text-slate-300 font-mono leading-relaxed max-w-sm">
                       <span className="text-pink-400 font-bold mr-1">“</span>

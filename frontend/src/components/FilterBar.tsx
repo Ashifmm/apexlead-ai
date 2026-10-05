@@ -128,9 +128,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <button
             onClick={onOpenScanPostsModal}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-pink-500/40 bg-gradient-to-r from-pink-600/20 via-rose-600/20 to-amber-500/10 px-3.5 py-2 text-xs font-semibold text-pink-300 shadow-sm transition-all hover:bg-pink-500/25 hover:border-pink-500/60 active:scale-[0.98]"
+            title="Launch 2-Tier Autonomous AI Lead Harvester"
           >
-            <Instagram className="h-4 w-4 text-pink-400" />
-            <span>Scan Target Posts</span>
+            <Sparkles className="h-4 w-4 text-pink-400" />
+            <span>AI Lead Harvester</span>
           </button>
 
           {/* Approve & Send Queued DMs CTA */}

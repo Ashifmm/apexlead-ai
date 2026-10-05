@@ -28,12 +28,13 @@ SEARCH_USER_AGENTS = [
 
 class InstagramIntentScanner:
     """
-    100% Pure Live Instagram Intent Harvester (GrowthGrid Engine):
+    2-Tier Autonomous AI Context & Intent Analyzer (GrowthGrid Engine):
     - NO mock data, NO placeholders, NO synthetic demo arrays.
-    - Uses real-time search queries targeting site:instagram.com/reel/ and site:instagram.com/p/
-      with strict intent triggers (e.g. 'need a website', 'need web designer', 'website cost').
-    - Extracts genuine active handles, post URLs, and real caption/comment quotes.
-    - If no live results match within the targeted window, returns an authentic empty state.
+    - Autonomous post discovery via public Instagram endpoints & search indices.
+    - Tier 1: Post Relevance Verification (AI Check) - evaluates caption context for business/growth relevance.
+    - Tier 2: Comment Buyer-Intent Evaluation (AI Check) - evaluates commenter intent, extracts business name,
+      user pain point, and filters strictly for confidence >= 70%.
+    - Dynamic GrowthGrid demo pitch generator.
     """
 
     def __init__(self):
@@ -50,31 +51,38 @@ class InstagramIntentScanner:
 
     def _harvest_live_posts(
         self,
-        keyword: str,
-        hashtag: Optional[str] = None,
-        max_results: int = 10
+        niche: Optional[str] = None,
+        max_candidates: int = 25
     ) -> List[Dict[str, Any]]:
         """
-        Executes genuine real-time search queries targeting Instagram reels and posts.
-        Extracts genuine links, handles, business names, and caption quotes.
+        Gathers live candidate posts and reels from public search queries.
+        Tailors queries to the optional industry/niche and business growth context.
         """
-        clean_keyword = keyword.strip() if keyword else "need a website"
-        clean_tag = re.sub(r'[^a-zA-Z0-9]', '', hashtag.lower()) if hashtag else ""
+        clean_niche = (niche or "").strip()
 
-        # Construct prioritized real-time search queries
+        # Build prioritized queries
         queries = []
-        if clean_tag and clean_keyword:
-            queries.append(f'site:instagram.com/#{clean_tag} "{clean_keyword}"')
+        if clean_niche:
+            queries.extend([
+                f'site:instagram.com/reel/ "{clean_niche}" "need a website"',
+                f'site:instagram.com/p/ "{clean_niche}" "need a website"',
+                f'site:instagram.com/reel/ "{clean_niche}" "website cost"',
+                f'site:instagram.com/p/ "{clean_niche}" "redesign website"',
+                f'site:instagram.com "{clean_niche}" "need web designer"',
+                f'site:instagram.com/reel/ "{clean_niche}" "website"',
+                f'site:instagram.com/p/ "{clean_niche}" "website"'
+            ])
+
         queries.extend([
-            f'site:instagram.com/reel/ "{clean_keyword}"',
-            f'site:instagram.com/p/ "{clean_keyword}"',
-            f'site:instagram.com "{clean_keyword}"',
             'site:instagram.com/reel/ "need a website"',
             'site:instagram.com/p/ "need a website"',
-            'site:instagram.com "need web designer"',
-            'site:instagram.com "redesign website"',
-            'site:instagram.com "website cost"',
-            'site:instagram.com "revamp website"'
+            'site:instagram.com/reel/ "need web designer"',
+            'site:instagram.com/p/ "redesign website"',
+            'site:instagram.com/reel/ "website cost"',
+            'site:instagram.com/p/ "revamp website"',
+            'site:instagram.com "need website for my business"',
+            'site:instagram.com/reel/ "eCommerce store" "pricing"',
+            'site:instagram.com/p/ "shopify store" "need developer"'
         ])
 
         discovered: List[Dict[str, Any]] = []
@@ -83,7 +91,7 @@ class InstagramIntentScanner:
 
         with httpx.Client(timeout=10.0, headers=headers, follow_redirects=True) as client:
             for q in queries:
-                if len(discovered) >= max_results:
+                if len(discovered) >= max_candidates:
                     break
                 try:
                     search_url = f"https://search.yahoo.com/search?p={urllib.parse.quote(q)}"
@@ -93,13 +101,12 @@ class InstagramIntentScanner:
 
                     soup = BeautifulSoup(resp.text, 'html.parser')
                     for a in soup.find_all('a', href=True):
-                        if len(discovered) >= max_results:
+                        if len(discovered) >= max_candidates:
                             break
 
                         href = a['href']
                         target_url = None
 
-                        # Resolve redirect URL
                         if "RU=" in href and "instagram.com" in href:
                             m = re.search(r'RU=([^/&]+)', href)
                             if m:
@@ -110,7 +117,6 @@ class InstagramIntentScanner:
                         if not target_url:
                             continue
 
-                        # Check if URL points to Instagram post, reel, or profile
                         if not ("/p/" in target_url or "/reel/" in target_url):
                             continue
 
@@ -119,7 +125,6 @@ class InstagramIntentScanner:
                             continue
                         seen_urls.add(clean_target)
 
-                        # Extract context container
                         container = a.find_parent('li') or a.find_parent('div')
                         snippet_text = container.get_text(" ", strip=True) if container else a.get_text(" ", strip=True)
 
@@ -137,7 +142,7 @@ class InstagramIntentScanner:
                                 if m_on:
                                     handle = m_on.group(1)
 
-                        # 2. Extract business name
+                        # 2. Extract preliminary business name
                         b_name = None
                         m_name = re.search(
                             r'(?:reel|p)\s*[^\s\w]*\s*[a-zA-Z0-9_-]+\s+([^|":•]+?)(?:\s+on Instagram|\s*\||\s*:|\s*•)',
@@ -153,7 +158,6 @@ class InstagramIntentScanner:
                             handle = re.sub(r'[^a-zA-Z0-9_]', '', b_name.lower().replace(" ", "_"))
 
                         if not handle:
-                            # Extract code from reel/p URL to make handle
                             code_match = re.search(r'/(?:reel|p)/([a-zA-Z0-9_-]+)', clean_target)
                             if code_match:
                                 handle = f"ig_{code_match.group(1).lower()}"
@@ -163,7 +167,8 @@ class InstagramIntentScanner:
                         if not b_name:
                             b_name = handle.replace("_", " ").title()
 
-                        # 3. Extract exact quote / comment snippet
+                        # 3. Extract caption context and comment snippet
+                        caption = snippet_text
                         comment = snippet_text
                         m_quote = re.search(r'"([^"]+)"', snippet_text)
                         if m_quote:
@@ -173,20 +178,12 @@ class InstagramIntentScanner:
                             if m_cap:
                                 comment = m_cap.group(1).strip()
 
-                        # Infer industry from query or text
-                        industry = "Commercial Brand"
-                        for ind_candidate in ["Salon", "Dental", "Clinic", "Bakery", "Boutique", "Gym", "Roofing", "Interiors", "Ecommerce", "Agency", "Law"]:
-                            if ind_candidate.lower() in snippet_text.lower():
-                                industry = ind_candidate
-                                break
-
                         discovered.append({
                             "handle": f"@{handle.lstrip('@')}",
                             "business_name": b_name,
-                            "industry": industry,
                             "post_url": clean_target,
+                            "caption": caption[:350],
                             "comment": comment[:250],
-                            "hashtag": clean_tag or "webdesign"
                         })
                 except Exception as e:
                     logger.warning(f"Error querying live search term '{q}': {e}")
@@ -197,104 +194,140 @@ class InstagramIntentScanner:
     def scan_intent(
         self,
         db: Session,
-        keyword: str = "need website",
+        niche: Optional[str] = None,
+        count: int = 5,
+        keyword: Optional[str] = None,
         hashtag: Optional[str] = None,
-        target_account: Optional[str] = None,
-        count: int = 5
+        target_account: Optional[str] = None
     ) -> List[Lead]:
         """
-        Scans Instagram for active accounts/comments signaling website intent in real time.
-        NO synthetic or mock fallbacks. Returns genuine matches or empty list.
+        2-Tier Autonomous AI Context & Intent Analyzer:
+        - Tier 1: Post Relevance Verification (AI Check). Skips irrelevant posts.
+        - Tier 2: Comment Buyer-Intent Evaluation (AI Check). Filters for is_website_lead=True and confidence >= 70.
+        - Injects GrowthGrid personalized demo pitch.
         """
-        clean_keyword = keyword.strip() if keyword else "need website"
-        clean_tag = re.sub(r'[^a-zA-Z0-9]', '', hashtag.lower()) if hashtag else ""
+        target_niche = (niche or keyword or hashtag or "").strip()
+        logger.info(f"Starting 2-Tier Autonomous AI Lead Harvester for niche: '{target_niche or 'All'}' (target: {count})...")
 
-        logger.info(f"Executing genuine live harvest for '{clean_keyword}' under #{clean_tag or 'all'}...")
-
-        # 1. Harvest live real-time matches from genuine search queries
-        live_candidates = self._harvest_live_posts(
-            keyword=clean_keyword,
-            hashtag=clean_tag,
-            max_results=count
+        # 1. Harvest candidates from live Instagram search stream
+        raw_candidates = self._harvest_live_posts(
+            niche=target_niche,
+            max_candidates=max(15, count * 3)
         )
 
-        created_leads: List[Lead] = []
-
-        # If no live results match, return authentic empty state (NO synthetic pool!)
-        if not live_candidates:
-            logger.info("No live Instagram intent leads found within the search window.")
+        if not raw_candidates:
+            logger.info("No live candidate posts found from real-time Instagram query stream.")
             return []
 
-        for cand in live_candidates[:count]:
-            handle = cand["handle"]
-            b_name = cand["business_name"]
+        verified_leads: List[Lead] = []
+
+        for cand in raw_candidates:
+            if len(verified_leads) >= count:
+                break
+
             post_url = cand["post_url"]
-            comment = cand["comment"]
-            industry = cand.get("industry") or "Commercial Brand"
-            tag_name = cand.get("hashtag") or "webdesign"
+            caption = cand["caption"]
+            handle = cand["handle"]
+            comment_text = cand["comment"]
+
+            # =========================================================================
+            # TIER 1: Post Relevance Verification (AI Check)
+            # =========================================================================
+            logger.info(f"Running Tier 1 AI Relevance Check for {post_url}...")
+            t1_eval = gemini_service.evaluate_post_relevance(caption=caption)
+
+            if not t1_eval.get("is_relevant_post", False):
+                logger.info(f"Tier 1 Rejected: Post {post_url} is not relevant to business growth/web design. Skipping.")
+                continue
+
+            post_topic = t1_eval.get("topic") or (target_niche.title() if target_niche else "Commercial Business")
+            logger.info(f"Tier 1 Passed! Topic: {post_topic}")
+
+            # =========================================================================
+            # TIER 2: Comment Buyer-Intent Evaluation (AI Check)
+            # =========================================================================
+            logger.info(f"Running Tier 2 AI Intent Evaluation for commenter {handle}...")
+            t2_eval = gemini_service.evaluate_comment_intent(
+                username=handle,
+                comment_text=comment_text,
+                topic=post_topic
+            )
+
+            is_lead = t2_eval.get("is_website_lead", False)
+            confidence = t2_eval.get("confidence", 0)
+
+            # Keep only leads where is_website_lead is true and confidence >= 70
+            if not is_lead or confidence < 70:
+                logger.info(
+                    f"Tier 2 Filtered Out: {handle} (is_website_lead={is_lead}, "
+                    f"confidence={confidence} < 70). Skipping."
+                )
+                continue
+
+            logger.info(f"Tier 2 Qualified! {handle} (Confidence: {confidence}%, Business: {t2_eval.get('business_name')})")
+
+            # Extract validated attributes
+            b_name = t2_eval.get("business_name") or cand["business_name"]
+            user_pain_point = t2_eval.get("user_pain_point") or "Needs professional website / online presence"
 
             # Check if lead already exists in DB
             existing = db.query(Lead).filter(Lead.instagram_handle == handle).first()
             if existing:
-                created_leads.append(existing)
+                # Update existing lead with latest intent evaluation
+                existing.lead_score = confidence
+                existing.industry = post_topic
+                existing.score_reasons = f"Topic: {post_topic} • Pain Point: {user_pain_point} (Confidence: {confidence}%)"
+                existing.source_post_url = post_url
+                existing.comment_text = comment_text
+                verified_leads.append(existing)
                 continue
 
-            # Calculate genuine commercial intent score
-            score = 88
-            c_lower = comment.lower()
-            if any(k in c_lower for k in ["need a website", "need website", "looking for developer", "need web designer"]):
-                score += 8
-            if any(k in c_lower for k in ["cost", "price", "pricing", "rates", "how much"]):
-                score += 3
-            score = min(99, max(82, score))
-
-            # Generate GrowthGrid standard demo offer pitch
+            # Generate standard GrowthGrid dynamic demo pitch
             personalized_dm = gemini_service.generate_instagram_dm(
                 handle=handle,
                 business_name=b_name,
-                industry=industry,
-                comment_text=comment,
-                post_context=f"Live Instagram reel/post: {post_url}"
+                industry=post_topic,
+                comment_text=comment_text,
+                post_context=f"Post Topic: {post_topic} | URL: {post_url}"
             )
 
-            score_reasons = (
-                f"Live Commercial Intent Signal: Detected active inquiry on Instagram: \"{comment[:90]}...\". "
-                f"Genuine post/reel captured via real-time index: {post_url}"
+            score_reasons = f"Topic: {post_topic} • Pain Point: {user_pain_point} (Confidence: {confidence}%)"
+            notes = (
+                f"Tier 1 Post Topic: {post_topic}\n"
+                f"Tier 2 Pain Point: {user_pain_point}\n"
+                f"Original Comment: \"{comment_text}\"\n"
+                f"Post URL: {post_url}"
             )
 
-            lead = Lead(
+            new_lead = Lead(
                 business_name=b_name,
-                industry=industry,
-                location=f"Instagram (#{tag_name})",
+                industry=post_topic,
+                location="Instagram",
                 website_url=None,
                 has_website=False,
-                email=None,  # Pure Instagram lead - zero fake emails
+                email=None,
                 phone=None,
                 instagram_handle=handle,
-                source="Instagram Intent",
+                source="Autonomous AI Harvester",
                 status="DM Drafted",
-                lead_score=score,
+                lead_score=confidence,
                 score_reasons=score_reasons,
                 source_post_url=post_url,
-                comment_text=comment,
+                comment_text=comment_text,
                 outreach_instagram_dm=personalized_dm,
-                notes=(
-                    f"Captured via Real-Time Live Harvester for '{clean_keyword}'\n"
-                    f"Post URL: {post_url}\n"
-                    f"Quote: \"{comment}\""
-                )
+                notes=notes
             )
 
-            db.add(lead)
-            created_leads.append(lead)
+            db.add(new_lead)
+            verified_leads.append(new_lead)
 
         db.commit()
 
-        for lead in created_leads:
+        for lead in verified_leads:
             db.refresh(lead)
 
-        logger.info(f"Live Harvester saved & drafted GrowthGrid pitches for {len(created_leads)} genuine leads.")
-        return created_leads
+        logger.info(f"2-Tier AI Pipeline verified & saved {len(verified_leads)} high-intent leads.")
+        return verified_leads
 
 
 # Singleton instance

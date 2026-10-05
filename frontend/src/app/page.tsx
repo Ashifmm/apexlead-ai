@@ -213,23 +213,22 @@ export default function DashboardPage() {
   };
 
   const handleScanInstagram = async (params: {
+    niche?: string;
+    count: number;
     hashtag?: string;
     keyword?: string;
     target_account?: string;
-    count: number;
   }) => {
     setIsScanningInstagram(true);
     try {
-      const targetLabel = params.target_account
-        ? `@${params.target_account}`
-        : `#${params.hashtag || "webdesign"}`;
-      showToast(`Scanning Instagram comments & intent across ${targetLabel}...`, "success");
+      const targetLabel = params.niche ? `niche "${params.niche}"` : "all commercial niches";
+      showToast(`Autonomous AI inspecting live Instagram context & buyer intent for ${targetLabel}...`, "success");
       const res = await scanInstagramIntent(params);
-      showToast(res.message || `Discovered ${res.count} Instagram intent leads!`, "success");
+      showToast(res.message || `Discovered ${res.count} verified high-intent leads!`, "success");
       setIsScanInstagramOpen(false);
       await loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to scan Instagram intent", "error");
+      showToast(err.message || "Failed to run autonomous AI discovery", "error");
     } finally {
       setIsScanningInstagram(false);
     }

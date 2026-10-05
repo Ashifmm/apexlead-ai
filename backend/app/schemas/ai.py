@@ -16,6 +16,22 @@ class AITestResponse(BaseModel):
 
 
 # ==============================================================================
+# Tier 1 & Tier 2 Autonomous AI Lead Intelligence Schemas
+# ==============================================================================
+
+class PostRelevanceResult(BaseModel):
+    is_relevant_post: bool = Field(..., description="Whether post relates to business growth, web design, eCommerce, brand building, or agency services")
+    topic: str = Field(..., description="Identified topic or niche of the post")
+
+
+class CommentIntentResult(BaseModel):
+    is_website_lead: bool = Field(..., description="Whether commenter has commercial intent to get a website, redesign, store, pricing, or developer help")
+    confidence: int = Field(..., ge=1, le=100, description="Confidence score from 1 to 100")
+    business_name: str = Field(..., description="Extracted business or display name")
+    user_pain_point: str = Field(..., description="Identified user pain point or requirement")
+
+
+# ==============================================================================
 # Phase 3: AI Lead Analyzer Schemas
 # ==============================================================================
 

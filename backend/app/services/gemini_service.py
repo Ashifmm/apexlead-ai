@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Optional, Dict, Any
 
 try:
@@ -182,6 +183,126 @@ class GeminiService:
             error_msg = str(e)
             logger.error(f"Gemini lead analysis error: {type(e).__name__}: {error_msg}")
             raise GeminiServiceError(f"Gemini lead analysis failed: {error_msg}")
+
+    def evaluate_post_relevance(
+        self,
+        caption: str,
+        model: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Tier 1: Post Relevance Verification (AI Check):
+        Evaluate post caption/context to determine if it relates to business growth,
+        web design, eCommerce, brand building, or agency services.
+        Return JSON: { 'is_relevant_post': true/false, 'topic': '...' }
+        """
+        clean_caption = (caption or "").strip()
+        prompt = (
+            f"Evaluate this post:\n"
+            f"Caption: '{clean_caption}'\n"
+            f"Determine if this post relates to business growth, web design, eCommerce, brand building, or agency services.\n"
+            f"Return JSON: {{ 'is_relevant_post': true/false, 'topic': '...' }}"
+        )
+        system_instruction = (
+            "You are an AI analyst. Evaluate social media posts strictly for relevance to business growth, "
+            "web design, eCommerce, brand building, or commercial agency services. Return valid JSON only with keys "
+            "'is_relevant_post' and 'topic'."
+        )
+        try:
+            raw = self.generate_text(prompt, model=model, system_instruction=system_instruction)
+            cleaned = raw.strip()
+            if cleaned.startswith("```"):
+                cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+                cleaned = re.sub(r"\s*```$", "", cleaned)
+            # Find JSON block if extra text returned
+            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if json_match:
+                cleaned = json_match.group(0)
+            data = json.loads(cleaned.strip())
+            is_rel = bool(data.get("is_relevant_post", False))
+            topic = str(data.get("topic") or "General Business").strip()
+            return {"is_relevant_post": is_rel, "topic": topic}
+        except Exception as e:
+            logger.warning(f"Tier 1 AI Post Evaluation error: {e}")
+            c_low = clean_caption.lower()
+            rel_words = ["business", "website", "design", "ecommerce", "brand", "agency", "client", "sales", "store", "salon", "clinic", "shop", "growth"]
+            is_rel = any(w in c_low for w in rel_words)
+            return {"is_relevant_post": is_rel, "topic": "Commercial Brand"}
+
+    def evaluate_comment_intent(
+        self,
+        username: str,
+        comment_text: str,
+        topic: str,
+        model: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Tier 2: Comment Buyer-Intent Evaluation (AI Check):
+        Analyze comment under a web/business post to determine if commenter has commercial intent
+        to get a website, redesign, store, pricing, or developer help.
+        Return JSON:
+        {
+          'is_website_lead': true/false,
+          'confidence': 1-100,
+          'business_name': '...',
+          'user_pain_point': '...'
+        }
+        """
+        clean_user = username.lstrip("@").strip()
+        clean_comment = (comment_text or "").strip()
+        prompt = (
+            f"Analyze this comment under a web/business post:\n"
+            f"Commenter: @{clean_user}\n"
+            f"Comment: '{clean_comment}'\n"
+            f"Post Context: '{topic}'\n"
+            f"Determine if this commenter has commercial intent to get a website, redesign, store, pricing, or developer help.\n"
+            f"Return JSON:\n"
+            f"{{\n"
+            f"  'is_website_lead': true/false,\n"
+            f"  'confidence': 1-100,\n"
+            f"  'business_name': '...',\n"
+            f"  'user_pain_point': '...'\n"
+            f"}}"
+        )
+        system_instruction = (
+            "You are a B2B sales intelligence AI. Analyze commenter intent strictly for web development, "
+            "ecommerce setup, website redesign, pricing, or developer assistance. "
+            "Extract or infer their business name cleanly. Return valid JSON only with keys "
+            "'is_website_lead', 'confidence', 'business_name', and 'user_pain_point'."
+        )
+        try:
+            raw = self.generate_text(prompt, model=model, system_instruction=system_instruction)
+            cleaned = raw.strip()
+            if cleaned.startswith("```"):
+                cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+                cleaned = re.sub(r"\s*```$", "", cleaned)
+            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if json_match:
+                cleaned = json_match.group(0)
+            data = json.loads(cleaned.strip())
+            conf = int(data.get("confidence") or 50)
+            conf = max(1, min(100, conf))
+            b_name = str(data.get("business_name") or "").strip()
+            if not b_name:
+                b_name = clean_user.replace("_", " ").replace(".", " ").title()
+            return {
+                "is_website_lead": bool(data.get("is_website_lead", False)),
+                "confidence": conf,
+                "business_name": b_name,
+                "user_pain_point": str(data.get("user_pain_point") or "Needs modern website / digital storefront").strip()
+            }
+        except Exception as e:
+            logger.warning(f"Tier 2 AI Comment Evaluation error: {e}")
+            c_low = clean_comment.lower()
+            intent_triggers = ["need a website", "need website", "cost", "price", "pricing", "redesign", "revamp", "shopify", "developer", "portfolio", "dm me", "how much"]
+            is_lead = any(w in c_low for w in intent_triggers)
+            conf = 85 if is_lead else 45
+            b_name = clean_user.replace("_", " ").replace(".", " ").title()
+            return {
+                "is_website_lead": is_lead,
+                "confidence": conf,
+                "business_name": b_name,
+                "user_pain_point": "Inquired about web development, pricing or redesign"
+            }
 
     def generate_instagram_dm(
         self,

@@ -4,18 +4,20 @@ from app.schemas.lead import LeadOut
 
 
 class IGScanRequest(BaseModel):
-    hashtag: Optional[str] = Field("needwebsite", description="Target hashtag to scan, e.g. needwebsite, webdesign, ecommercebrand, smallbusinessowner")
-    keyword: Optional[str] = Field("need a website", description="Intent trigger phrase to filter comments, e.g. need website, cost, dm me, shopify")
-    target_account: Optional[str] = Field(None, description="Optional competitor or agency profile to inspect, e.g. webflow, shopify, squarespace")
-    count: int = Field(5, ge=1, le=30, description="Number of high-intent prospects to capture")
+    niche: Optional[str] = Field(None, description="Target industry or niche, e.g. Salons, eCommerce, Clinics or empty for general")
+    count: int = Field(5, ge=1, le=30, description="Target quantity of leads to capture (3, 5, 8, 12)")
+    hashtag: Optional[str] = Field(None, description="Optional legacy hashtag")
+    keyword: Optional[str] = Field(None, description="Optional legacy keyword")
+    target_account: Optional[str] = Field(None, description="Optional target account")
 
 
 class IGScanResponse(BaseModel):
     message: str
-    hashtag: Optional[str] = None
-    keyword: Optional[str] = None
+    niche: Optional[str] = None
     count: int
     leads: List[LeadOut]
+    hashtag: Optional[str] = None
+    keyword: Optional[str] = None
 
 
 class GenerateDMRequest(BaseModel):

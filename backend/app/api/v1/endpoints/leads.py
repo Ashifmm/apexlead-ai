@@ -97,36 +97,38 @@ def seed_leads(db: Session = Depends(get_db)):
     return {"message": f"Successfully seeded {count} high-intent Instagram prospects with AI DMs.", "inserted": count}
 
 
-@router.post("/scan-instagram", response_model=IGScanResponse, summary="Scan Instagram for accounts/comments signaling website intent")
+@router.post("/scan-instagram", response_model=IGScanResponse, summary="2-Tier Autonomous AI Lead Harvester")
 def scan_instagram_leads(
     req: IGScanRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Instagram Intent Scanner:
-    - Searches public posts, reels, and target agency hashtags (e.g. #needwebsite, #webdesign, #ecommercebrand).
-    - Filters comments for high-intent triggers ('need a website', 'cost', 'dm me', 'website price', 'shopify', 'portfolio').
-    - Extracts commenter @handle, post context URL, and exact comment text.
-    - Generates Context-Aware AI dynamic outreach DMs.
+    2-Tier Autonomous AI Context & Intent Analyzer:
+    - Tier 1: Post Relevance Verification (AI Check).
+    - Tier 2: Comment Buyer-Intent Evaluation (AI Check with confidence >= 70).
+    - Auto-generates GrowthGrid dynamic demo pitches.
     """
     leads = instagram_scanner.scan_intent(
         db,
-        keyword=req.keyword or "need website",
+        niche=req.niche,
+        count=req.count,
+        keyword=req.keyword,
         hashtag=req.hashtag,
-        target_account=req.target_account,
-        count=req.count
+        target_account=req.target_account
     )
+    niche_label = req.niche or "All Niches"
     if len(leads) == 0:
-        msg = f"No live Instagram leads found matching '{req.keyword or 'need website'}' within the targeted 48h search window."
+        msg = f"No live leads met the 2-Tier AI verification threshold (>= 70% confidence) for {niche_label}."
     else:
-        msg = f"Harvested {len(leads)} genuine live Instagram prospects actively inquiring for website development."
+        msg = f"Discovered {len(leads)} genuine live prospects verified by 2-Tier AI Intelligence."
 
     return IGScanResponse(
         message=msg,
-        hashtag=req.hashtag,
-        keyword=req.keyword,
+        niche=req.niche,
         count=len(leads),
-        leads=leads
+        leads=leads,
+        hashtag=req.hashtag,
+        keyword=req.keyword
     )
 
 

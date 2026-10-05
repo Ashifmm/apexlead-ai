@@ -119,9 +119,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenScanPosts}
             className="flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-gradient-to-r from-pink-600/20 via-rose-600/20 to-amber-500/10 px-3 py-1.5 text-xs font-semibold text-pink-300 transition-all hover:bg-pink-500/25 hover:border-pink-500/60 active:scale-95 shadow-sm"
+            title="Launch 2-Tier Autonomous AI Lead Harvester"
           >
             <Sparkles className="h-3.5 w-3.5 text-pink-400" />
-            <span>Scan Target Posts</span>
+            <span>AI Lead Harvester</span>
           </button>
 
           {/* Daily IG Auto-DM Batch Dispatch Control */}
