@@ -116,20 +116,21 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   };
 
   const handleOneClickWebDM = async () => {
-    const handleClean = (lead.instagram_handle || "instagram").replace("@", "").trim();
+    const handleClean = (lead.instagram_handle || "instagram").replace(/^@+/, "").trim();
     const dmText = draftDM || getModalGrowthGridDM(lead, lead.outreach_instagram_dm);
+    const businessName = lead.business_name || handleClean;
 
-    // 1. Automatically copy this generated message to the user's clipboard
+    // 1. Copy GrowthGrid pitch template to clipboard
     try {
       await navigator.clipboard.writeText(dmText);
     } catch {
       // ignore
     }
 
-    // 2. Show a bright green toast notification
-    onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
+    // 2. Show toast: "GrowthGrid pitch copied for {business_name}!"
+    onNotify?.(`GrowthGrid pitch copied for ${businessName}!`, "success");
 
-    // 3. Open the Instagram direct message window: https://ig.me/m/{handle} in a new tab
+    // 3. Open https://ig.me/m/{username} in a new tab
     const igDirectUrl = `https://ig.me/m/${handleClean}`;
     window.open(igDirectUrl, "_blank", "noopener,noreferrer");
 

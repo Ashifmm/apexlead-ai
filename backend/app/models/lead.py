@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, func
+from sqlalchemy.orm import synonym
 from app.db.base import Base
 
 
@@ -42,6 +43,11 @@ class Lead(Base):
     # status: "Intent Detected", "DM Drafted", "DM Queued", "Sent"
     status = Column(String(50), default="Intent Detected", nullable=False, index=True)
     
+    # Synonyms for platform and username interoperability
+    username = synonym("instagram_handle")
+    platform = synonym("source")
+    intent_score = synonym("lead_score")
+    
     # Stage 2: AI Lead Scoring (0 to 100)
     lead_score = Column(Integer, default=0, nullable=False, index=True)
     score_reasons = Column(Text, nullable=True)  # JSON or text breakdown
@@ -66,4 +72,7 @@ class Lead(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     def __repr__(self) -> str:
-        return f"<Lead id={self.id} business_name='{self.business_name}' status='{self.status}'>"
+        lead_id = self.__dict__.get("id", None)
+        b_name = self.__dict__.get("business_name", "lead")
+        lead_status = self.__dict__.get("status", "New")
+        return f"<Lead id={lead_id} business_name='{b_name}' status='{lead_status}'>"

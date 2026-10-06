@@ -123,20 +123,21 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   };
 
   const handleOpenInstagramDM = async (lead: Lead) => {
-    const username = (lead.instagram_handle || "instagram").replace("@", "").trim();
+    const username = (lead.instagram_handle || "instagram").replace(/^@+/, "").trim();
     const formattedMessage = formatGrowthGridDM(lead, lead.outreach_instagram_dm);
+    const businessName = lead.business_name || username;
 
-    // 1. Immediately execute navigator.clipboard.writeText(formattedMessage)
+    // 1. Copy GrowthGrid pitch template to clipboard
     try {
       await navigator.clipboard.writeText(formattedMessage);
     } catch {
       // ignore
     }
 
-    // 2. Display bright green toast notification
-    onNotify?.("GrowthGrid pitch copied! Just paste (Ctrl+V) in the Instagram chat.", "success");
+    // 2. Show toast: "GrowthGrid pitch copied for {business_name}!"
+    onNotify?.(`GrowthGrid pitch copied for ${businessName}!`, "success");
 
-    // 3. Open https://ig.me/m/{username} in a new browser tab
+    // 3. Open https://ig.me/m/{username} in a new tab
     const igDirectUrl = `https://ig.me/m/${username}`;
     window.open(igDirectUrl, "_blank", "noopener,noreferrer");
 
