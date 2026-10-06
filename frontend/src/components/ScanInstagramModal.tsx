@@ -18,12 +18,12 @@ interface ScanInstagramModalProps {
 
 const DATE_RANGE_OPTIONS = [
   { value: 1, label: "Last 24 Hours" },
-  { value: 2, label: "Last 48 Hours" },
+  { value: 2, label: "Last 2 Days" },
   { value: 7, label: "Last 7 Days" },
   { value: 14, label: "Last 14 Days" },
 ];
 
-const QUANTITY_OPTIONS = [10, 25, 50, 100];
+const QUANTITY_OPTIONS = [5, 10, 25, 50];
 
 export const ScanInstagramModal: React.FC<ScanInstagramModalProps> = ({
   isOpen,

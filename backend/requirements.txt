@@ -17,6 +17,7 @@ google-genai>=0.1.1
 # HTTP Client & Web Scraping (for website analysis in Stage 4)
 httpx>=0.27.0
 beautifulsoup4>=4.12.0
+duckduckgo_search>=8.0.0
 
 
 # Optional CORS & Utility

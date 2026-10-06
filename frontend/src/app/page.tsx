@@ -93,8 +93,10 @@ export default function DashboardPage() {
   };
 
   // Load Data
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (showSpinner: boolean = true) => {
+    if (showSpinner) {
+      setLoading(true);
+    }
     try {
       // 1. Check health
       try {
@@ -140,7 +142,9 @@ export default function DashboardPage() {
     } catch (err: any) {
       console.error("Failed to load dashboard data:", err);
     } finally {
-      setLoading(false);
+      if (showSpinner) {
+        setLoading(false);
+      }
     }
   }, [search, statusFilter, dailyIgLimit]);
 
@@ -246,7 +250,7 @@ export default function DashboardPage() {
           };
         });
       }
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
       showToast(err.message || "Failed to run autonomous AI discovery", "error");
     } finally {

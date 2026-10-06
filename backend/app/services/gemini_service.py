@@ -308,6 +308,97 @@ class GeminiService:
                 "user_pain_point": "Inquired about web development, online store, or pricing"
             }
 
+    def extract_lead_details(
+        self,
+        handle: str,
+        snippet: str,
+        post_url: str,
+        target_niche: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Extract clean business_name, inquiry_text, compute intent_score (0-100),
+        industry, and user_pain_point from an Instagram search snippet.
+        """
+        clean_handle = handle.lstrip("@").strip()
+        clean_snippet = (snippet or "").strip()
+        clean_url = (post_url or "").strip()
+
+        # Heuristic baseline
+        heuristic_name = clean_handle.replace("_", " ").replace(".", " ").title()
+        m_title = re.search(r'(?:Instagram\s+https?://[^\s]+\s+)?([A-Za-z0-9\s&\'\.-]{2,35}?)\s*(?:\||-|•|on Instagram)', clean_snippet)
+        if m_title and len(m_title.group(1).strip()) > 2 and not m_title.group(1).strip().lower().startswith("http"):
+            cand = m_title.group(1).strip()
+            if cand.lower() not in ["instagram", "reel", "post", "video", "photo"]:
+                heuristic_name = cand
+
+        prompt = (
+            f"Analyze this Instagram prospect found via web search:\n"
+            f"- Instagram Handle: @{clean_handle}\n"
+            f"- Post / Profile URL: {clean_url}\n"
+            f"- Snippet / Content: '{clean_snippet}'\n"
+            f"- Target Niche Filter: '{target_niche or 'General'}'\n\n"
+            f"Extract or infer the following:\n"
+            f"1. business_name: The clean official business/brand/creator name (e.g. 'Aura Boutique', 'Desginncode', 'White Sox'). Clean up any @handles or noisy symbols.\n"
+            f"2. inquiry_text: The clean inquiry, caption, bio snippet, or buyer comment expressing need for a website, redesign, or online orders (max 200 chars).\n"
+            f"3. intent_score: Integer 65 to 98 evaluating commercial buying intent for web design / digital store / ecommerce.\n"
+            f"4. industry: Category/vertical (e.g. 'Fashion & Boutique', 'Salon & Beauty', 'Web & Digital', 'Restaurant', 'Health & Wellness', 'Retail').\n"
+            f"5. user_pain_point: Concise 1-sentence buyer need/problem (e.g. 'Relies on manual DMs for orders and needs online store', 'Needs modern portfolio website').\n\n"
+            f"Return strictly valid JSON only:\n"
+            f"{{\n"
+            f"  \"business_name\": \"...\",\n"
+            f"  \"inquiry_text\": \"...\",\n"
+            f"  \"intent_score\": 88,\n"
+            f"  \"industry\": \"...\",\n"
+            f"  \"user_pain_point\": \"...\"\n"
+            f"}}"
+        )
+        system_instruction = (
+            "You are a B2B sales intelligence AI. Analyze Instagram post and profile snippets to extract clean business names, "
+            "buyer inquiries, intent scores (65-98), and industry classifications. Return valid JSON only."
+        )
+
+        try:
+            raw = self.generate_text(prompt, system_instruction=system_instruction)
+            cleaned = raw.strip()
+            if cleaned.startswith("```"):
+                cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+                cleaned = re.sub(r"\s*```$", "", cleaned)
+            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if json_match:
+                cleaned = json_match.group(0)
+            data = json.loads(cleaned.strip())
+
+            b_name = str(data.get("business_name") or heuristic_name).strip()
+            inquiry = str(data.get("inquiry_text") or clean_snippet[:200]).strip()
+            score = int(data.get("intent_score") or 85)
+            score = max(50, min(100, score))
+            ind = str(data.get("industry") or target_niche or "Commercial Brand").strip()
+            pain = str(data.get("user_pain_point") or "Needs a high-converting modern website & online store").strip()
+
+            return {
+                "business_name": b_name,
+                "inquiry_text": inquiry,
+                "intent_score": score,
+                "industry": ind,
+                "user_pain_point": pain
+            }
+        except Exception as e:
+            logger.warning(f"Gemini extract_lead_details fallback: {e}")
+            c_low = clean_snippet.lower()
+            score = 85
+            if any(w in c_low for w in ["need a website", "need website", "looking for web designer", "cost", "pricing"]):
+                score = 92
+            elif any(w in c_low for w in ["dm to order", "website coming soon", "redesign"]):
+                score = 88
+
+            return {
+                "business_name": heuristic_name,
+                "inquiry_text": clean_snippet[:200] if clean_snippet else "Commercial inquiry captured from Instagram",
+                "intent_score": score,
+                "industry": (target_niche.title() if target_niche else "Commercial Business"),
+                "user_pain_point": "Inquired about modern website, online presence, or redesign"
+            }
+
     def generate_instagram_dm(
         self,
         handle: str,

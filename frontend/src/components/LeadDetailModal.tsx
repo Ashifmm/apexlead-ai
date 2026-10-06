@@ -46,9 +46,6 @@ function getModalGrowthGridDM(
   lead: Lead,
   existingDM?: string | null
 ): string {
-  if (existingDM && existingDM.trim() && existingDM.includes("— GrowthGrid")) {
-    return existingDM.trim();
-  }
   const name = (lead.business_name && lead.business_name.trim())
     ? lead.business_name.trim()
     : ((lead.instagram_handle && lead.instagram_handle.trim()) ? lead.instagram_handle.replace(/^@/, "").trim() : "your business");

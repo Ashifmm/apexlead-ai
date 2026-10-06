@@ -65,7 +65,7 @@ class CRUDLead:
             query = query.filter(Lead.lead_score >= min_score)
 
         total = query.count()
-        items = query.order_by(Lead.created_at.desc()).offset(skip).limit(limit).all()
+        items = query.order_by(Lead.id.desc()).offset(skip).limit(limit).all()
         return items, total
 
     def create(self, db: Session, *, obj_in: LeadCreate) -> Lead:
