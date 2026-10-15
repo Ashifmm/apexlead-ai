@@ -221,20 +221,16 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
               const commentDisplay = lead.comment_text || (lead.notes?.split("Original Comment:")[1]?.split("\n")[0]?.trim()) || (lead.score_reasons || "Commercial inquiry captured");
 
-              // Extract post freshness / time frame badge (e.g. "Posted 2d ago")
-              const matchAge = lead.notes?.match(/Posted:\s*([^\n]+)/i) || lead.score_reasons?.match(/Posted:\s*([^\n•]+)/i);
-              let postAgeBadge = matchAge ? `Posted ${matchAge[1].trim()}` : null;
+              // Extract real post freshness / time frame badge (e.g. "Posted 2d ago", "Posted 14h ago")
+              const matchAge = lead.notes?.match(/Posted:\s*([^\n|•]+)/i) || lead.score_reasons?.match(/Posted:\s*([^\n•]+)/i);
+              let postAgeBadge = matchAge ? `Posted ${matchAge[1].trim().replace(/^Posted:\s*/i, '')}` : null;
               if (!postAgeBadge) {
-                const createdDate = new Date(lead.created_at);
-                const now = new Date();
-                const diffHours = Math.max(1, Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60)));
-                if (diffHours < 24) {
-                  postAgeBadge = `Posted ${diffHours}h ago`;
-                } else {
-                  const diffDays = Math.floor(diffHours / 24);
-                  postAgeBadge = `Posted ${diffDays}d ago`;
-                }
+                postAgeBadge = "Posted recently";
               }
+
+              // Extract small business followers count (<10k followers)
+              const matchFollowers = lead.notes?.match(/Followers:\s*([^\n|•]+)/i) || lead.score_reasons?.match(/Followers:\s*([^\n•]+)/i);
+              const followersBadge = matchFollowers ? matchFollowers[1].trim() : null;
 
               return (
                 <tr
@@ -258,8 +254,18 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                           <span>@{handleClean}</span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0 text-slate-500" />
                         </a>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                          <span className="truncate max-w-[130px]">{lead.business_name}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5 flex-wrap">
+                          <span className="truncate max-w-[130px] font-medium text-slate-200">{lead.business_name}</span>
+                          {lead.location && lead.location !== "Instagram" && (
+                            <span className="text-[10px] text-emerald-400/90 font-medium truncate max-w-[110px]" title={lead.location}>
+                              📍 {lead.location.replace(", India", "")}
+                            </span>
+                          )}
+                          {followersBadge && (
+                            <span className="rounded bg-slate-800/80 px-1.5 py-0.2 text-[9px] text-slate-400 border border-slate-700/60 font-mono">
+                              👥 {followersBadge}
+                            </span>
+                          )}
                           {lead.industry && (
                             <span className="rounded bg-slate-800/80 px-1.5 py-0.2 text-[10px] text-pink-300 font-medium border border-slate-700/60">
                               {lead.industry}

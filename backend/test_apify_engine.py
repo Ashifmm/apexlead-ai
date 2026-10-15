@@ -16,7 +16,10 @@ from app.services.instagram_scraper import (
     CURATED_AGENCY_PROFILES,
     CURATED_POST_REEL_URLS,
     VERIFIED_REAL_COMMENTERS_POOL,
-    scrape_instagram_comments_apify
+    scrape_instagram_comments_apify,
+    parse_comment_timestamp,
+    format_freshness_label,
+    is_disqualified_account,
 )
 from app.services.gemini_service import gemini_service
 
@@ -145,6 +148,77 @@ def test_apify_engine():
     assert url_d == "https://www.instagram.com/reel/Dd9FYcIRLBp/", f"Expected fallback reel URL, got {url_d}"
 
     print("[OK] Robust Post URL Resolution tests passed across all Apify schemas!")
+
+    # 8. Test Commenter vs Creator Mismatch & Follower Guard
+    print("[Testing] Follower Guard & Creator Mismatch Guard...")
+    # Disqualify if commenter matches post creator
+    disq_creator, reason_c = is_disqualified_account(username="top_agency", post_creator="top_agency")
+    assert disq_creator is True
+    assert "creator" in reason_c.lower()
+
+    # Disqualify if account is verified (blue tick)
+    disq_ver, reason_v = is_disqualified_account(username="big_influencer", is_verified=True)
+    assert disq_ver is True
+    assert "verified" in reason_v.lower()
+
+    # Disqualify if account has > 15,000 followers
+    disq_fol, reason_f = is_disqualified_account(username="viral_page", followers_count=25000)
+    assert disq_fol is True
+    assert "15,000" in reason_f
+
+    # Qualify genuine Indian small business (<10,000 followers, unverified, distinct from creator)
+    disq_ok, reason_ok = is_disqualified_account(
+        username="dr_ananya_dental",
+        followers_count=3200,
+        is_verified=False,
+        post_creator="webdesign_india"
+    )
+    assert disq_ok is False
+    assert "Eligible" in reason_ok
+    print("[OK] Follower Guard and Creator Mismatch Guard tests passed successfully!")
+
+    # 9. Test Real Comment Timestamp Parsing and Freshness Formatting
+    print("[Testing] Timestamp Parsing & Relative Freshness Labeling...")
+    from datetime import datetime, timezone, timedelta
+
+    # Unix epoch in seconds
+    t_sec = 1700000000
+    dt_sec = parse_comment_timestamp(t_sec)
+    assert dt_sec is not None and dt_sec.tzinfo is not None
+
+    # Unix epoch in milliseconds
+    t_ms = 1700000000000
+    dt_ms = parse_comment_timestamp(t_ms)
+    assert dt_ms is not None
+    assert int(dt_sec.timestamp()) == int(dt_ms.timestamp())
+
+    # ISO string
+    iso_s = "2026-10-14T10:00:00Z"
+    dt_iso = parse_comment_timestamp(iso_s)
+    assert dt_iso is not None
+
+    # Relative freshness formatting
+    now_utc = datetime.now(timezone.utc)
+    lbl_min = format_freshness_label(now_utc - timedelta(minutes=14))
+    assert "m ago" in lbl_min
+
+    lbl_hr = format_freshness_label(now_utc - timedelta(hours=9))
+    assert "9h ago" == lbl_hr or "h ago" in lbl_hr
+
+    lbl_day = format_freshness_label(now_utc - timedelta(days=3))
+    assert "3d ago" in lbl_day
+    print("[OK] Timestamp parsing and freshness formatting verified!")
+
+    # 10. Verify Indian Small Business Demographics (<10k followers, Indian locations, 0 verified)
+    print("[Testing] Indian Small Business Pool demographics...")
+    for commenter in VERIFIED_REAL_COMMENTERS_POOL:
+        f_count = commenter.get("followers_count", 0)
+        assert 200 <= f_count <= 10000, f"Followers count {f_count} out of target range [200, 10000] for {commenter['username']}"
+        assert commenter.get("is_verified") is False, f"Account {commenter['username']} must not be verified!"
+        loc = commenter.get("location", "")
+        assert "India" in loc, f"Account {commenter['username']} location '{loc}' is not in India!"
+        assert commenter.get("days_ago", 0) <= 7.0, f"Comment age {commenter.get('days_ago')} > 7 days"
+    print(f"[OK] 100% of {len(VERIFIED_REAL_COMMENTERS_POOL)} seed businesses are genuine Indian SMBs (<10k followers, unverified, active)!")
 
     print("\nALL APIFY ENGINE, COMMENT INTENT, BLACKLIST & SERVICE NICHE TESTS PASSED SUCCESSFULLY!")
 

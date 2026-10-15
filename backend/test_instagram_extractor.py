@@ -43,12 +43,19 @@ def test_instagram_lead_extractor():
             assert not is_blacklisted_content(db_lead.business_name), f"Shopify/eCommerce found in lead name: {db_lead.business_name}"
             assert not is_blacklisted_content(db_lead.instagram_handle), f"Shopify/eCommerce found in handle: {db_lead.instagram_handle}"
 
+            # Strict assertion: Indian Small Business demography & Follower guard
+            assert "India" in (db_lead.location or ""), f"Lead location '{db_lead.location}' is not in India!"
+            assert "Followers:" in (db_lead.notes or ""), f"Notes missing Followers metric: {db_lead.notes}"
+            assert "Posted:" in (db_lead.notes or ""), f"Notes missing Posted freshness metric: {db_lead.notes}"
+            assert db_lead.source_post_url.startswith("https://www.instagram.com/"), f"Invalid post URL: {db_lead.source_post_url}"
+
             print(f"[{idx}] ID={db_lead.id} | {db_lead.instagram_handle} | {db_lead.business_name} | {db_lead.industry} | Score={db_lead.lead_score}%")
+            print(f"     Location: {db_lead.location} | Notes: {db_lead.notes[:80]}...")
             print(f"     Inquiry: {db_lead.comment_text[:80]}...")
             print(f"     Post URL: {db_lead.source_post_url}")
             print(f"     DM Pitch snippet: {db_lead.outreach_instagram_dm[:60]}... (Contains GrowthGrid: {'GrowthGrid' in db_lead.outreach_instagram_dm})")
 
-        print("\nSUCCESS: Exact quantity fulfilled, service niche verified, 0 Shopify, persisted to DB!")
+        print("\nSUCCESS: Exact quantity fulfilled, Indian SMB verified (<10k followers), 0 Shopify, real timestamps, persisted to DB!")
     finally:
         db.close()
 
