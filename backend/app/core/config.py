@@ -62,5 +62,9 @@ class Settings(BaseSettings):
     def is_instagram_configured(self) -> bool:
         return bool(self.INSTAGRAM_SESSION_ID and self.INSTAGRAM_SESSION_ID.strip() != "")
 
+    @property
+    def is_apify_configured(self) -> bool:
+        return bool(self.APIFY_API_TOKEN and self.APIFY_API_TOKEN.strip() != "")
+
 
 settings = Settings()
