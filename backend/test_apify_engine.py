@@ -73,9 +73,35 @@ def test_apify_engine():
         assert not p["username"].startswith("growth_brand_"), f"Synthetic username found in pool: {p['username']}"
         assert p["intent_score"] >= 80, f"Low intent score in pool: {p['intent_score']}"
         assert len(p["username"]) >= 3, f"Invalid username: {p['username']}"
-    print(f"[OK] Verified Real Commenters Pool ({len(VERIFIED_REAL_COMMENTERS_POOL)} profiles) contains 0 synthetic usernames")
+        # Ensure post URL is canonical and valid format
+        p_url = p.get("source_post_url", "")
+        assert p_url.startswith("https://www.instagram.com/"), f"Invalid post URL: {p_url}"
+        assert "C32q4_5uV5v" not in p_url and "C31P0c0O1uK" not in p_url, f"Broken placeholder URL in pool: {p_url}"
+    print(f"[OK] Verified Real Commenters Pool ({len(VERIFIED_REAL_COMMENTERS_POOL)} profiles) contains 0 synthetic usernames and 100% verified URLs")
 
-    print("\nALL APIFY ENGINE & COMMENT INTENT TESTS PASSED SUCCESSFULLY!")
+    # 5. Test Robust Post URL Resolution
+    from app.services.instagram_scraper import resolve_canonical_post_url
+
+    # Case A: direct shortCode field
+    url_a = resolve_canonical_post_url({"shortCode": "DDn45x_uu9g"})
+    assert url_a == "https://www.instagram.com/p/DDn45x_uu9g/", f"Expected canonical post URL, got {url_a}"
+
+    # Case B: raw postUrl with reel and tracking query param
+    url_b = resolve_canonical_post_url({"postUrl": "https://www.instagram.com/reel/DeZn96mNLSi/?igsh=MWZzMWc2MQ=="})
+    assert url_b == "https://www.instagram.com/reel/DeZn96mNLSi/", f"Expected clean reel URL, got {url_b}"
+
+    # Case C: raw inputUrl with /p/
+    url_c = resolve_canonical_post_url({"inputUrl": "https://www.instagram.com/p/Dc1uwziD4k2"})
+    assert url_c == "https://www.instagram.com/p/Dc1uwziD4k2/", f"Expected canonical /p/ URL, got {url_c}"
+
+    # Case D: fallback URL
+    url_d = resolve_canonical_post_url({}, fallback_url="https://www.instagram.com/reel/Dd9FYcIRLBp/")
+    assert url_d == "https://www.instagram.com/reel/Dd9FYcIRLBp/", f"Expected fallback reel URL, got {url_d}"
+
+    print("[OK] Robust Post URL Resolution tests passed across all Apify schemas!")
+
+    print("\nALL APIFY ENGINE, COMMENT INTENT & CANONICAL URL TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     test_apify_engine()
+

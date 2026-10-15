@@ -213,9 +213,11 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             {leads.map((lead) => {
               const handleClean = (lead.instagram_handle || "prospect").replace("@", "").trim();
               const profileUrl = `https://instagram.com/${handleClean}`;
-              const postUrl = lead.source_post_url || (lead.notes?.match(/https:\/\/instagram\.com\/p\/[^\s\n]+/)?.[0]) || profileUrl;
-              const postCodeMatch = postUrl.match(/\/p\/([a-zA-Z0-9_-]+)/);
-              const postCode = postCodeMatch ? postCodeMatch[1] : "Reel";
+              const postUrl = lead.source_post_url || (lead.notes?.match(/https:\/\/instagram\.com\/(?:p|reel)\/[^\s\n]+/)?.[0]) || profileUrl;
+              const postCodeMatch = postUrl.match(/\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
+              const isReel = postUrl.includes("/reel/");
+              const postPrefix = isReel ? "reel" : "p";
+              const postCode = postCodeMatch ? `${postPrefix}/${postCodeMatch[1].slice(0, 8)}` : "Post";
 
               const commentDisplay = lead.comment_text || (lead.notes?.split("Original Comment:")[1]?.split("\n")[0]?.trim()) || (lead.score_reasons || "Commercial inquiry captured");
 
@@ -299,7 +301,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                           className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white hover:border-slate-700 transition-all"
                         >
                           <Hash className="h-2.5 w-2.5 text-pink-400" />
-                          <span>p/{postCode.slice(0, 8)}</span>
+                          <span>{postCode}</span>
                           <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
                         </a>
                       </div>
