@@ -238,37 +238,57 @@ class GeminiService:
         """
         Tier 2: Comment Buyer-Intent Evaluation (AI Check):
         Analyze comment under a web/business post to determine if commenter has commercial intent
-        to get a website, redesign, store, pricing, or developer help.
-        Return JSON:
+        for service businesses, local clinics, salons, interior designers, and professional websites.
+        CRITICAL FILTER: Completely reject any Shopify, dropshipping, or eCommerce inquiries.
+        Return JSON schema:
         {
-          'is_website_lead': true/false,
-          'confidence': 1-100,
-          'business_name': '...',
-          'user_pain_point': '...'
+          'is_valid_service_lead': true/false,
+          'business_category': 'Salon' | 'Clinic' | 'Interior' | 'Agency' | 'Local Business' | 'Other',
+          'inquiry_summary': '...',
+          'confidence': 1-100
         }
         """
         clean_user = username.lstrip("@").strip()
         clean_comment = (comment_text or "").strip()
+        clean_topic = (topic or "").strip()
+        c_low = clean_comment.lower()
+
+        # Hard Blacklist Check: Immediately reject any Shopify or dropshipping inquiries
+        if "shopify" in c_low or "dropship" in c_low or any(k in c_low for k in [
+            "shopify", "shopify expert", "shopify store", "dropshipping",
+            "dropship", "aliexpress", "shopify theme", "shopify website", "woocommerce"
+        ]):
+            logger.info(f"Comment from @{clean_user} rejected by hard Shopify/dropshipping blacklist.")
+            return {
+                "is_valid_service_lead": False,
+                "is_website_lead": False,
+                "business_category": "Other",
+                "inquiry_summary": "Rejected: Involves Shopify / dropshipping / eCommerce",
+                "confidence": 0,
+                "business_name": clean_user.replace("_", " ").replace(".", " ").title(),
+                "user_pain_point": "Rejected eCommerce inquiry"
+            }
+
         prompt = (
-            f"Analyze this comment under a web/business post:\n"
-            f"Commenter: @{clean_user}\n"
+            f"Analyze this comment:\n"
             f"Comment: '{clean_comment}'\n"
-            f"Post Context: '{topic}'\n"
-            f"Determine if this commenter expresses interest in or commercial intent to get a website, online store, portfolio, redesign, developer help, or pricing.\n"
-            f"Accept any genuine inquiry or interest in web development, online sales, or pricing quotes.\n"
+            f"Post Context: '{clean_topic}'\n"
+            f"Criteria:\n"
+            f"1. Must NOT be about Shopify, dropshipping, or eCommerce platforms.\n"
+            f"2. Must be a business, founder, creator, or local service looking for a professional website, landing page, portfolio, booking page, or redesign.\n"
             f"Return JSON:\n"
             f"{{\n"
-            f"  'is_website_lead': true/false,\n"
-            f"  'confidence': 1-100,\n"
-            f"  'business_name': '...',\n"
-            f"  'user_pain_point': '...'\n"
+            f"  'is_valid_service_lead': true/false,\n"
+            f"  'business_category': 'Salon' | 'Clinic' | 'Interior' | 'Agency' | 'Local Business' | 'Other',\n"
+            f"  'inquiry_summary': '...',\n"
+            f"  'confidence': 1-100\n"
             f"}}"
         )
         system_instruction = (
-            "You are a sales intelligence AI. Evaluate commenter interest in websites, online stores, portfolios, "
-            "redesigns, developer help, or pricing. Accept any commenter expressing genuine commercial interest. "
-            "Extract or infer their business name cleanly. Return valid JSON only with keys "
-            "'is_website_lead', 'confidence', 'business_name', and 'user_pain_point'."
+            "You are a specialized B2B sales intelligence AI evaluating high-intent service business leads. "
+            "Strictly reject any inquiries related to Shopify, dropshipping, AliExpress, or eCommerce platforms. "
+            "Qualify businesses, salons, clinics, interior designers, restaurants, car detailing, or local service providers "
+            "who need custom business websites, booking flows, portfolios, or redesigns. Return valid JSON only."
         )
         try:
             raw = self.generate_text(prompt, model=model, system_instruction=system_instruction)
@@ -280,32 +300,53 @@ class GeminiService:
             if json_match:
                 cleaned = json_match.group(0)
             data = json.loads(cleaned.strip())
-            conf = int(data.get("confidence") or 60)
+            is_valid = bool(data.get("is_valid_service_lead", False))
+            # Extra safeguard against shopify/dropship
+            if "shopify" in c_low or "dropship" in c_low:
+                is_valid = False
+            category = str(data.get("business_category") or "Local Business").strip()
+            summary = str(data.get("inquiry_summary") or "").strip()
+            conf = int(data.get("confidence") or (85 if is_valid else 20))
             conf = max(1, min(100, conf))
-            b_name = str(data.get("business_name") or "").strip()
-            if not b_name:
-                b_name = clean_user.replace("_", " ").replace(".", " ").title()
+            b_name = clean_user.replace("_", " ").replace(".", " ").title()
             return {
-                "is_website_lead": bool(data.get("is_website_lead", False)),
+                "is_valid_service_lead": is_valid,
+                "is_website_lead": is_valid,
+                "business_category": category,
+                "inquiry_summary": summary or f"Looking for {category} website / booking solution",
                 "confidence": conf,
                 "business_name": b_name,
-                "user_pain_point": str(data.get("user_pain_point") or "Needs modern website / online store").strip()
+                "user_pain_point": summary or f"Needs custom {category.lower()} website or booking solution"
             }
         except Exception as e:
             logger.warning(f"Tier 2 AI Comment Evaluation error: {e}")
-            c_low = clean_comment.lower()
-            intent_triggers = [
+            if "shopify" in c_low or "dropship" in c_low or any(k in c_low for k in ["shopify", "dropshipping", "dropship", "aliexpress", "woocommerce"]):
+                return {
+                    "is_valid_service_lead": False,
+                    "is_website_lead": False,
+                    "business_category": "Other",
+                    "inquiry_summary": "Rejected: Involves Shopify / dropshipping / eCommerce",
+                    "confidence": 0,
+                    "business_name": clean_user.replace("_", " ").replace(".", " ").title(),
+                    "user_pain_point": "Rejected eCommerce inquiry"
+                }
+
+            service_triggers = [
                 "need a website", "need website", "cost", "price", "pricing", "redesign",
-                "revamp", "shopify", "store", "online store", "developer", "portfolio", "dm me", "how much", "quote"
+                "revamp", "developer", "portfolio", "dm me", "how much", "quote",
+                "booking", "appointment", "landing page", "salon", "clinic", "interior"
             ]
-            is_lead = any(w in c_low for w in intent_triggers)
-            conf = 85 if is_lead else 55
+            is_lead = any(w in c_low for w in service_triggers)
+            conf = 85 if is_lead else 40
             b_name = clean_user.replace("_", " ").replace(".", " ").title()
             return {
+                "is_valid_service_lead": is_lead,
                 "is_website_lead": is_lead,
+                "business_category": "Local Business",
+                "inquiry_summary": "Inquired about service website, booking flow, or design pricing",
                 "confidence": conf,
                 "business_name": b_name,
-                "user_pain_point": "Inquired about web development, online store, or pricing"
+                "user_pain_point": "Inquired about service website, booking flow, or design pricing"
             }
 
     def extract_lead_details(
