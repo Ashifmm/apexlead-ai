@@ -15,7 +15,9 @@ from app.services.instagram_scraper import (
     TARGET_SERVICE_SEARCH_QUERIES,
     CURATED_AGENCY_PROFILES,
     CURATED_POST_REEL_URLS,
-    VERIFIED_REAL_COMMENTERS_POOL,
+    COMMERCIAL_INTENT_KEYWORDS,
+    contains_intent_keyword,
+    harvest_instagram_leads,
     scrape_instagram_comments_apify,
     parse_comment_timestamp,
     format_freshness_label,
@@ -80,7 +82,7 @@ def test_apify_engine():
     # 4. Test Service Business High-Intent Samples
     service_intent_samples = [
         ("I need a modern website for our dental clinic. How much do you charge?", 90),
-        ("Need an appointment booking system for our hair salon", 90),
+        ("Need an appointment booking website for our hair salon", 90),
         ("Looking for an interior designer website with project portfolio", 90),
         ("Can you redesign our website? Our current one is super slow", 90),
         ("DM me details and pricing please", 80),
@@ -115,19 +117,21 @@ def test_apify_engine():
     assert isinstance(results, list)
     print(f"[OK] Apify graceful failure handling verified (returned {len(results)} items without uncaught exception)")
 
-    # 6. Verify Verified Real Commenters Pool - 100% Service Businesses & 0 Blacklisted
-    for p in VERIFIED_REAL_COMMENTERS_POOL:
-        assert not p["username"].startswith("growth_brand_"), f"Synthetic username found in pool: {p['username']}"
-        assert p["intent_score"] >= 80, f"Low intent score in pool: {p['intent_score']}"
-        assert len(p["username"]) >= 3, f"Invalid username: {p['username']}"
-        # Assert NO Shopify or dropshipping in pool
-        assert not is_blacklisted_content(p["comment_text"]), f"Blacklisted keyword in pool comment: {p['comment_text']}"
-        assert not is_blacklisted_content(p["username"]), f"Blacklisted keyword in pool username: {p['username']}"
-        assert not is_blacklisted_content(p["industry"]), f"Blacklisted keyword in pool industry: {p['industry']}"
-        # Ensure post URL is canonical and valid format
-        p_url = p.get("source_post_url", "")
-        assert p_url.startswith("https://www.instagram.com/"), f"Invalid post URL: {p_url}"
-    print(f"[OK] Verified Real Commenters Pool ({len(VERIFIED_REAL_COMMENTERS_POOL)} profiles) contains 100% real service businesses, 0 Shopify, and 100% verified URLs")
+    # 6. Verify Exact Commercial Intent Keywords
+    print("[Testing] Commercial Intent Keywords & Filter...")
+    assert len(COMMERCIAL_INTENT_KEYWORDS) == 10
+    required_keywords = ["website", "cost", "price", "charges", "details", "banwani", "dm", "how much", "portfolio", "interested"]
+    for kw in required_keywords:
+        assert kw in COMMERCIAL_INTENT_KEYWORDS, f"Missing keyword: {kw}"
+        assert contains_intent_keyword(f"I need {kw} please") is True
+
+    assert contains_intent_keyword("I need a modern website") is True
+    assert contains_intent_keyword("cost kitni hogi?") is True
+    assert contains_intent_keyword("website banwani hai") is True
+    assert contains_intent_keyword("dm pricing details") is True
+    assert contains_intent_keyword("awesome vibes bro") is False
+    assert contains_intent_keyword("cool photo") is False
+    print(f"[OK] Exact Commercial Intent Keywords verified ({len(COMMERCIAL_INTENT_KEYWORDS)} keywords)")
 
     # 7. Test Robust Post URL Resolution
     from app.services.instagram_scraper import resolve_canonical_post_url
@@ -214,16 +218,12 @@ def test_apify_engine():
     assert "3d ago" in lbl_day
     print("[OK] Timestamp parsing and freshness formatting verified!")
 
-    # 10. Verify Indian Small Business Demographics (<10k followers, Indian locations, 0 verified)
-    print("[Testing] Indian Small Business Pool demographics...")
-    for commenter in VERIFIED_REAL_COMMENTERS_POOL:
-        f_count = commenter.get("followers_count", 0)
-        assert 200 <= f_count <= 10000, f"Followers count {f_count} out of target range [200, 10000] for {commenter['username']}"
-        assert commenter.get("is_verified") is False, f"Account {commenter['username']} must not be verified!"
-        loc = commenter.get("location", "")
-        assert "India" in loc, f"Account {commenter['username']} location '{loc}' is not in India!"
-        assert commenter.get("days_ago", 0) <= 7.0, f"Comment age {commenter.get('days_ago')} > 7 days"
-    print(f"[OK] 100% of {len(VERIFIED_REAL_COMMENTERS_POOL)} seed businesses are genuine Indian SMBs (<10k followers, unverified, active)!")
+    # 10. Verify Zero-Synthetic / Zero-Mock Policy
+    print("[Testing] Zero-Synthetic Policy (strictly return 0 leads when token missing or scraper empty)...")
+    empty_result = harvest_instagram_leads(quantity=5, apify_token=None)
+    assert len(empty_result) == 0, f"Expected 0 leads when token missing, got {len(empty_result)}"
+    assert empty_result._leads == [], "Expected empty list with zero fabricated leads"
+    print("[OK] Zero-Synthetic Policy verified: backend strictly returns 0 leads instead of hallucinating data!")
 
     # 11. Test Atomic Single-Object Extraction & Hard Guard (Zero Cross-Mapping)
     print("[Testing] Atomic Single-Object Extraction & Hard Guard...")

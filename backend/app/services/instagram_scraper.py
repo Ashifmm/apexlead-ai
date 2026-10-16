@@ -307,323 +307,26 @@ INTENT_PATTERNS: List[Tuple[str, int, str]] = [
     ),
 ]
 
-# 5. Verified Real Commercial Instagram Accounts (Genuine Indian Small Businesses <10k Followers)
-# Zero Shopify / Zero dropshipping / Zero huge celebrity brands.
-# Strictly real Indian small businesses, doctors, salon owners, interior studios, and cafes (200 - 10,000 followers).
-# Staggered days_ago offsets (0.4 to 5.5 days) ensure exact days_range date filtering.
-VERIFIED_REAL_COMMENTERS_POOL: List[Dict[str, Any]] = [
-    # Doctors & Dental Clinics
-    {
-        "username": "dr_arora_dental",
-        "business_name": "Dr. Arora Dental Studio",
-        "industry": "Dental Clinic",
-        "location": "Bangalore, India",
-        "followers_count": 2450,
-        "is_verified": False,
-        "comment_text": "Looking for a web designer to build an online appointment booking system for our dental clinic in Indiranagar. Please DM pricing!",
-        "intent_score": 96,
-        "source_post_url": "https://www.instagram.com/reel/DeZn96mNLSi/",
-        "days_ago": 0.5
-    },
-    {
-        "username": "dr_neha_dermaclinic",
-        "business_name": "Dr. Neha Skin & Aesthetics",
-        "industry": "Dermatology Clinic",
-        "location": "Delhi-NCR, India",
-        "followers_count": 5200,
-        "is_verified": False,
-        "comment_text": "We want to rebuild our aesthetic clinic appointment and consultation booking website before next month. What are your project rates?",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/DeekB3VtNqC/",
-        "days_ago": 0.8
-    },
-    {
-        "username": "apex_physiocare_mumbai",
-        "business_name": "Apex Physiotherapy Clinic",
-        "industry": "Physiotherapy & Rehab",
-        "location": "Mumbai, India",
-        "followers_count": 1400,
-        "is_verified": False,
-        "comment_text": "We're opening a second rehab center in Andheri and need an updated patient appointment scheduling landing page. DM me info!",
-        "intent_score": 96,
-        "source_post_url": "https://www.instagram.com/reel/Dd9FYcIRLBp/",
-        "days_ago": 1.2
-    },
-    {
-        "username": "dr_sharma_orthoclinic",
-        "business_name": "Dr. Sharma Ortho & Joint Clinic",
-        "industry": "Orthopedic Clinic",
-        "location": "Chandigarh, India",
-        "followers_count": 2100,
-        "is_verified": False,
-        "comment_text": "Need a clean, patient-friendly website with online doctor consultation request forms and service breakdowns. DM rates please.",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/p/Dc1uwziD4k2/",
-        "days_ago": 1.5
-    },
-    {
-        "username": "dr_menon_eyeclinic",
-        "business_name": "Dr. Menon Eye Care & Retina",
-        "industry": "Ophthalmology Clinic",
-        "location": "Chennai, India",
-        "followers_count": 1650,
-        "is_verified": False,
-        "comment_text": "In search of an agency to build a modern appointment booking portal for our eye clinic branches. DM details please.",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/p/Dbv-ZWKkfop/",
-        "days_ago": 2.1
-    },
-    {
-        "username": "dr_kapoor_homeopathy",
-        "business_name": "Dr. Kapoor Holistic Healing",
-        "industry": "Holistic Health Clinic",
-        "location": "Kolkata, India",
-        "followers_count": 1200,
-        "is_verified": False,
-        "comment_text": "Need an appointment scheduling site for our homeopathic clinic and telemedicine consultations. What are your project rates?",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/DeUbdfEztnY/",
-        "days_ago": 2.4
-    },
-    {
-        "username": "dr_iyer_childcare",
-        "business_name": "Dr. Iyer Pediatric Clinic",
-        "industry": "Pediatric Clinic",
-        "location": "Bangalore, India",
-        "followers_count": 1750,
-        "is_verified": False,
-        "comment_text": "We need a clean patient-facing website with vaccination schedule reminder integration and appointment slots.",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/reel/DSchCCJAMnu/",
-        "days_ago": 3.2
-    },
-
-    # Interior Designers & Architects
-    {
-        "username": "studio_vastu_interiors",
-        "business_name": "Vastu Space Design Studio",
-        "industry": "Interior Architecture",
-        "location": "Mumbai, India",
-        "followers_count": 4800,
-        "is_verified": False,
-        "comment_text": "Need an agency to design a luxury portfolio website to showcase our residential interior projects in Bandra. Send your portfolio via DM.",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/DeZn96mNLSi/",
-        "days_ago": 0.6
-    },
-    {
-        "username": "urban_space_architects",
-        "business_name": "Urban Space Architects",
-        "industry": "Architecture Studio",
-        "location": "Chennai, India",
-        "followers_count": 4200,
-        "is_verified": False,
-        "comment_text": "Looking for an agency to build our architectural firm website with interactive commercial project galleries. DM pricing!",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/p/Dc1uwziD4k2/",
-        "days_ago": 1.1
-    },
-    {
-        "username": "curated_spaces_pune",
-        "business_name": "Curated Living Interiors",
-        "industry": "Luxury Interior Design",
-        "location": "Pune, India",
-        "followers_count": 3300,
-        "is_verified": False,
-        "comment_text": "Our current studio website is outdated. Need a complete redesign with high-res interior walkthrough showcases. DM pricing!",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/reel/DeekB3VtNqC/",
-        "days_ago": 1.7
-    },
-    {
-        "username": "vriksh_landscapes_blr",
-        "business_name": "Vriksh Landscape Studio",
-        "industry": "Landscape Architecture",
-        "location": "Bangalore, India",
-        "followers_count": 3500,
-        "is_verified": False,
-        "comment_text": "Looking for a web developer to build our upcoming studio landscape portfolio showcase and client inquiry flow.",
-        "intent_score": 93,
-        "source_post_url": "https://www.instagram.com/p/Dbv-ZWKkfop/",
-        "days_ago": 2.8
-    },
-    {
-        "username": "clay_and_wood_studio",
-        "business_name": "Clay & Wood Bespoke Interiors",
-        "industry": "Interior & Modular Design",
-        "location": "Delhi-NCR, India",
-        "followers_count": 4950,
-        "is_verified": False,
-        "comment_text": "Looking for quotes on a Webflow portfolio website with booking inquiry integration for home interior consultations.",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/reel/DSchCCJAMnu/",
-        "days_ago": 3.6
-    },
-
-    # Salons, Spas & Beauty Parlors
-    {
-        "username": "glam_lounge_salon",
-        "business_name": "Glam Lounge Unisex Salon",
-        "industry": "Hair & Beauty Salon",
-        "location": "Pune, India",
-        "followers_count": 3100,
-        "is_verified": False,
-        "comment_text": "Need a developer to build a seamless mobile booking calendar for our hair stylists and bridal appointments. DM details please!",
-        "intent_score": 96,
-        "source_post_url": "https://www.instagram.com/reel/DSchCCJAMnu/",
-        "days_ago": 0.7
-    },
-    {
-        "username": "kavya_bridal_studio",
-        "business_name": "Kavya Bridal Hair & Makeup",
-        "industry": "Bridal Makeup & Studio",
-        "location": "Jaipur, India",
-        "followers_count": 6100,
-        "is_verified": False,
-        "comment_text": "Taking bridal bookings via DM right now, desperately need an automated booking calendar and bridal package showcase website!",
-        "intent_score": 97,
-        "source_post_url": "https://www.instagram.com/reel/DeZn96mNLSi/",
-        "days_ago": 0.4
-    },
-    {
-        "username": "aura_skin_clinic_jaipur",
-        "business_name": "Aura Aesthetic Lounge",
-        "industry": "Aesthetic Medicine & Spa",
-        "location": "Jaipur, India",
-        "followers_count": 3700,
-        "is_verified": False,
-        "comment_text": "Need someone to build a sleek appointment booking landing page for our boutique aesthetic clinic in C-Scheme.",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/DeUbdfEztnY/",
-        "days_ago": 2.2
-    },
-    {
-        "username": "prana_holistic_wellness",
-        "business_name": "Prana Ayurveda & Spa",
-        "industry": "Ayurvedic Wellness & Spa",
-        "location": "Kochi, India",
-        "followers_count": 2800,
-        "is_verified": False,
-        "comment_text": "We need a custom responsive landing page for our Ayurvedic retreat and doctor consultation bookings. Can you DM your rates?",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/Dd9FYcIRLBp/",
-        "days_ago": 2.6
-    },
-
-    # Car Detailing & Auto Care
-    {
-        "username": "precision_detailing_blr",
-        "business_name": "Precision Auto Spa",
-        "industry": "Car Detailing & Studio",
-        "location": "Bangalore, India",
-        "followers_count": 1850,
-        "is_verified": False,
-        "comment_text": "Need an automated service package booking system and ceramic coating quote calculator for our detailing studio. DM us!",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/p/Cma_cZgDsBc/",
-        "days_ago": 0.9
-    },
-    {
-        "username": "torque_auto_detailing",
-        "business_name": "Torque Ceramic Studio",
-        "industry": "Automotive Detailing",
-        "location": "Ahmedabad, India",
-        "followers_count": 1950,
-        "is_verified": False,
-        "comment_text": "Looking for a clean web designer to build an interactive detailing package selector and booking site for our workshop.",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/reel/DeUbdfEztnY/",
-        "days_ago": 1.4
-    },
-    {
-        "username": "luxe_drive_detailing",
-        "business_name": "Luxe Drive Paint Protection",
-        "industry": "Car Care & PPF Studio",
-        "location": "Gurgaon, India",
-        "followers_count": 2300,
-        "is_verified": False,
-        "comment_text": "Taking bookings via phone now, desperately need an automated online booking and service pricing website for PPF/Ceramic!",
-        "intent_score": 96,
-        "source_post_url": "https://www.instagram.com/reel/DeZn96mNLSi/",
-        "days_ago": 0.5
-    },
-
-    # Cafes, Bakeries & Dining
-    {
-        "username": "the_artisan_roastery",
-        "business_name": "Roastery Artisan Cafe",
-        "industry": "Artisan Cafe & Roastery",
-        "location": "Hyderabad, India",
-        "followers_count": 3900,
-        "is_verified": False,
-        "comment_text": "We need an integrated table booking & private event catering request website. What's your turnaround time?",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/p/Dbv-ZWKkfop/",
-        "days_ago": 1.0
-    },
-    {
-        "username": "the_bakers_whisk_delhi",
-        "business_name": "The Baker's Whisk Patisserie",
-        "industry": "Artisan Bakery & Desserts",
-        "location": "Delhi-NCR, India",
-        "followers_count": 4600,
-        "is_verified": False,
-        "comment_text": "Currently taking custom cake & catering orders via DM only. Looking for someone to build a sleek online ordering and inquiry site ASAP.",
-        "intent_score": 96,
-        "source_post_url": "https://www.instagram.com/reel/DeZn96mNLSi/",
-        "days_ago": 0.7
-    },
-    {
-        "username": "the_table_kitchen_hyd",
-        "business_name": "The Table Dining Lounge",
-        "industry": "Fine Dining & Hospitality",
-        "location": "Hyderabad, India",
-        "followers_count": 5800,
-        "is_verified": False,
-        "comment_text": "Looking for a web designer for our private dining room and corporate dinner reservations portal. Please send DM with portfolio.",
-        "intent_score": 95,
-        "source_post_url": "https://www.instagram.com/reel/DeUbdfEztnY/",
-        "days_ago": 3.0
-    },
-    {
-        "username": "spice_route_catering",
-        "business_name": "Spice Route Gourmet Events",
-        "industry": "Catering & Event Dining",
-        "location": "Pune, India",
-        "followers_count": 2700,
-        "is_verified": False,
-        "comment_text": "Need a fast, mobile-first website for our seasonal wedding catering menus and date availability inquiry.",
-        "intent_score": 93,
-        "source_post_url": "https://www.instagram.com/reel/Dd9FYcIRLBp/",
-        "days_ago": 4.1
-    },
-
-    # Fitness & Movement Studios
-    {
-        "username": "zenith_yoga_shala",
-        "business_name": "Zenith Yoga & Movement Shala",
-        "industry": "Yoga & Wellness Studio",
-        "location": "Bangalore, India",
-        "followers_count": 4100,
-        "is_verified": False,
-        "comment_text": "Looking for a web designer to build an online studio timetable and member workshop booking portal. DM details!",
-        "intent_score": 94,
-        "source_post_url": "https://www.instagram.com/reel/DeUbdfEztnY/",
-        "days_ago": 1.6
-    },
-    {
-        "username": "soulfit_gym_mumbai",
-        "business_name": "SoulFit Strength & Conditioning",
-        "industry": "Fitness & Gym Club",
-        "location": "Mumbai, India",
-        "followers_count": 3200,
-        "is_verified": False,
-        "comment_text": "We need a high-converting landing page for our personal training programs and session trial bookings in Bandra.",
-        "intent_score": 93,
-        "source_post_url": "https://www.instagram.com/p/Dc1uwziD4k2/",
-        "days_ago": 2.0
-    }
+# 5. Exact commercial intent keywords required for web development / agency prospects
+# Filter comments using exact keyword matching:
+# ["website", "cost", "price", "charges", "details", "banwani", "dm", "how much", "portfolio", "interested"]
+# Only save the lead if the commenter's raw text contains at least one of these words.
+COMMERCIAL_INTENT_KEYWORDS: List[str] = [
+    "website", "cost", "price", "charges", "details", "banwani", "dm", "how much", "portfolio", "interested"
 ]
+
+
+def contains_intent_keyword(text: Optional[str]) -> bool:
+    """
+    Filter comments using exact keyword matching:
+    ['website', 'cost', 'price', 'charges', 'details', 'banwani', 'dm', 'how much', 'portfolio', 'interested'].
+    Only qualify if commenter's raw text contains at least one of these words.
+    """
+    if not text or not isinstance(text, str):
+        return False
+    t_low = text.lower()
+    return any(kw in t_low for kw in COMMERCIAL_INTENT_KEYWORDS)
+
 
 
 class HarvestResult(dict):
@@ -667,26 +370,28 @@ def evaluate_commercial_intent(comment_text: str) -> Tuple[int, str]:
     """
     Evaluates a comment for buyer commercial intent for service businesses & web development.
     CRITICAL: Immediately discards any Shopify, dropshipping, or eCommerce inquiries.
+    Requires at least one target commercial intent keyword.
     Returns: (intent_score: int [0-100], score_reason: str)
     """
     if not comment_text or not comment_text.strip():
         return 0, "No comment content provided"
 
-    clean_text = comment_text.strip().lower()
+    clean_text = comment_text.strip()
+    clean_lower = clean_text.lower()
 
     # Hard Blacklist Check
-    if is_blacklisted_content(clean_text):
+    if is_blacklisted_content(clean_lower):
         return 0, "Rejected: Blacklisted Shopify / dropshipping / eCommerce inquiry"
 
+    # Mandatory commercial intent keyword check
+    if not contains_intent_keyword(clean_lower):
+        return 40, "Comment missing required commercial intent keywords"
+
     for pattern, score, reason in INTENT_PATTERNS:
-        if re.search(pattern, clean_text, re.IGNORECASE):
+        if re.search(pattern, clean_lower, re.IGNORECASE):
             return score, reason
 
-    # Broad intent heuristic for service businesses
-    if any(k in clean_text for k in ["website", "web design", "portfolio", "booking", "appointment", "redesign", "landing page"]):
-        return 75, "Expressed interest in service website or online booking presence"
-
-    return 40, "Low commercial intent / non-commercial comment"
+    return 80, "Raw comment contains commercial inquiry keywords (website/cost/pricing/dm/etc.)"
 
 
 def resolve_canonical_post_url(
@@ -844,6 +549,10 @@ def scrape_instagram_comments_apify(
                     if is_blacklisted_content(commenter_username) or is_blacklisted_content(raw_comment_text):
                         continue
 
+                    # Commercial Intent Keyword Filter: Must contain at least one target keyword
+                    if not contains_intent_keyword(raw_comment_text):
+                        continue
+
                     # Follower Filter Guard & Verification Check
                     is_ver = bool(
                         item.get("isVerified")
@@ -956,6 +665,10 @@ def scrape_instagram_comments_apify(
                         if is_blacklisted_content(commenter_username) or is_blacklisted_content(raw_comment_text):
                             continue
 
+                        # Commercial Intent Keyword Filter: Must contain at least one target keyword
+                        if not contains_intent_keyword(raw_comment_text):
+                            continue
+
                         is_ver = bool(
                             c.get("isVerified")
                             or (c.get("owner") or {}).get("isVerified")
@@ -1048,27 +761,34 @@ def harvest_instagram_leads(
         seen_in_this_run: Set[str] = set()
         now = datetime.now(timezone.utc)
 
-        # Step 1: Check for Apify API Token
+        # Check for Apify API Token
         token = (
             apify_token or
             os.environ.get("APIFY_API_TOKEN") or
             getattr(settings, "APIFY_API_TOKEN", "")
         )
 
-        apify_candidates: List[Dict[str, Any]] = []
-        if token and token.strip():
-            logger.info("APIFY_API_TOKEN detected. Launching live Apify comment scraper for small businesses...")
-            search_query = hashtag or keyword or (niche if niche else TARGET_SERVICE_SEARCH_QUERIES[0])
-            apify_candidates = scrape_instagram_comments_apify(
-                token=token.strip(),
-                direct_urls=post_urls or CURATED_POST_REEL_URLS,
-                search_query=search_query,
-                search_type="hashtag",
-                results_limit=target_quantity * 4,
-                days_range=days_range
+        if not token or not token.strip():
+            logger.warning(
+                "APIFY_API_TOKEN is not configured in the environment. "
+                "Real live scraping requires a valid Apify API token. "
+                "Returning 0 leads (zero synthetic/mock fallbacks)."
             )
-        else:
-            logger.info("APIFY_API_TOKEN not set in environment. Accessing verified real public Indian small business accounts pool.")
+            print("Total posts harvested: 0")
+            print("Total comments parsed: 0")
+            print("Qualified real small business leads saved: 0 (No synthetic data allowed)")
+            return HarvestResult([])
+
+        logger.info("APIFY_API_TOKEN detected. Launching live Apify comment scraper for small businesses...")
+        search_query = hashtag or keyword or (niche if niche else TARGET_SERVICE_SEARCH_QUERIES[0])
+        apify_candidates = scrape_instagram_comments_apify(
+            token=token.strip(),
+            direct_urls=post_urls or CURATED_POST_REEL_URLS,
+            search_query=search_query,
+            search_type="hashtag",
+            results_limit=target_quantity * 4,
+            days_range=days_range
+        )
 
         # Process and qualify Apify live comments
         for cand in apify_candidates:
@@ -1148,89 +868,6 @@ def harvest_instagram_leads(
             existing_usernames.add(u)
             harvested_leads.append(new_lead)
 
-        # Step 2: Verified Real Instagram Accounts Pool (Genuine Indian Small Businesses <10k Followers)
-        # If live scraping returned fewer than target (or Apify token is not configured),
-        # draw from the 100% REAL verified commercial service commenters pool
-        if len(harvested_leads) < target_quantity:
-            niche_lower = niche.lower().strip() if niche else ""
-
-            # Strict Date Range Filtering: filter pool by days_range
-            time_filtered_pool = [
-                p for p in VERIFIED_REAL_COMMENTERS_POOL
-                if p.get("days_ago", 1.0) <= float(days_range)
-            ]
-            effective_pool = time_filtered_pool if time_filtered_pool else VERIFIED_REAL_COMMENTERS_POOL
-
-            # Filter by niche if requested
-            if niche_lower:
-                matched = [
-                    p for p in effective_pool
-                    if niche_lower in p["industry"].lower() or niche_lower in p["business_name"].lower()
-                ]
-                combined_pool = matched + [p for p in effective_pool if p not in matched]
-            else:
-                combined_pool = effective_pool
-
-            for profile in combined_pool:
-                if len(harvested_leads) >= target_quantity:
-                    break
-                u = profile["username"].lower()
-                comment = profile["comment_text"]
-                days_ago = profile.get("days_ago", 1.0)
-
-                # Strict days_range enforcement
-                if days_ago > float(days_range):
-                    continue
-
-                # Hard Blacklist & Follower Guard
-                if is_blacklisted_content(u) or is_blacklisted_content(comment) or is_blacklisted_content(profile.get("industry")):
-                    continue
-                if u in existing_usernames or u in seen_in_this_run:
-                    continue
-
-                p_url = resolve_canonical_post_url(profile, fallback_url=profile.get("source_post_url"))
-                if not p_url:
-                    continue
-
-                prof_url = f"https://www.instagram.com/{u}/"
-                if not verify_live_instagram_url(prof_url) or not verify_live_instagram_url(p_url):
-                    logger.debug(f"Skipping pool candidate @{u}: live URL verification failed for profile or post {p_url}")
-                    continue
-
-                seen_in_this_run.add(u)
-                comment_time = now - timedelta(days=days_ago)
-                freshness_label = format_freshness_label(comment_time)
-                b_name = profile["business_name"]
-                ind = profile["industry"]
-                loc = profile.get("location", "India")
-                f_count = profile.get("followers_count", 2500)
-                score = profile["intent_score"]
-                pitch = format_growthgrid_pitch(b_name)
-
-                new_lead = Lead(
-                    business_name=b_name,
-                    industry=ind,
-                    location=loc,
-                    website_url=None,
-                    has_website=False,
-                    email=None,
-                    phone=None,
-                    instagram_handle=f"@{u}",
-                    source="Instagram Intent",
-                    status="Intent Detected",
-                    lead_score=score,
-                    score_reasons=f"Intent Score: {score}% • Posted: {freshness_label} • Real Indian small business ({f_count:,} followers)",
-                    source_post_url=p_url,
-                    comment_text=comment,
-                    outreach_instagram_dm=pitch,
-                    notes=f"Posted: {freshness_label} | Followers: {f_count:,} | Location: {loc} | Discovered via Real Comment Harvester | Inquiry: {comment}"
-                )
-                db.add(new_lead)
-                db.commit()
-                db.refresh(new_lead)
-                existing_usernames.add(u)
-                harvested_leads.append(new_lead)
-
         # Terminal telemetry
         print(f"Total posts harvested: {len(harvested_leads) * 2}")
         print(f"Total comments parsed: {len(harvested_leads) * 3}")
@@ -1300,6 +937,7 @@ __all__ = [
     "TARGET_SERVICE_SEARCH_QUERIES",
     "CURATED_AGENCY_PROFILES",
     "CURATED_POST_REEL_URLS",
-    "VERIFIED_REAL_COMMENTERS_POOL",
+    "COMMERCIAL_INTENT_KEYWORDS",
+    "contains_intent_keyword",
 ]
 
