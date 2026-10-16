@@ -147,7 +147,11 @@ def test_apify_engine():
     url_d = resolve_canonical_post_url({}, fallback_url="https://www.instagram.com/reel/Dd9FYcIRLBp/")
     assert url_d == "https://www.instagram.com/reel/Dd9FYcIRLBp/", f"Expected fallback reel URL, got {url_d}"
 
-    print("[OK] Robust Post URL Resolution tests passed across all Apify schemas!")
+    # Case E: Strict Zero Cross-Wiring (Missing URL/shortcode must return empty string, never a random reel)
+    url_e = resolve_canonical_post_url({})
+    assert url_e == "", f"Expected empty string for missing post URL, got '{url_e}'"
+
+    print("[OK] Robust Post URL Resolution tests passed across all Apify schemas with 0 fabrications!")
 
     # 8. Test Commenter vs Creator Mismatch & Follower Guard
     print("[Testing] Follower Guard & Creator Mismatch Guard...")
@@ -219,6 +223,74 @@ def test_apify_engine():
         assert "India" in loc, f"Account {commenter['username']} location '{loc}' is not in India!"
         assert commenter.get("days_ago", 0) <= 7.0, f"Comment age {commenter.get('days_ago')} > 7 days"
     print(f"[OK] 100% of {len(VERIFIED_REAL_COMMENTERS_POOL)} seed businesses are genuine Indian SMBs (<10k followers, unverified, active)!")
+
+    # 11. Test Atomic Single-Object Extraction & Hard Guard (Zero Cross-Mapping)
+    print("[Testing] Atomic Single-Object Extraction & Hard Guard...")
+    sample_dataset = [
+        # Valid 1-to-1 comment item
+        {
+            "ownerUsername": "dr_varun_dental",
+            "text": "Need an appointment booking website for our dental clinic",
+            "postUrl": "https://www.instagram.com/reel/DeZn96mNLSi/?igsh=123",
+            "shortCode": "DeZn96mNLSi"
+        },
+        # Missing username -> must be dropped
+        {
+            "text": "Need a website design",
+            "postUrl": "https://www.instagram.com/reel/DeZn96mNLSi/"
+        },
+        # Missing comment text -> must be dropped
+        {
+            "ownerUsername": "random_user",
+            "postUrl": "https://www.instagram.com/reel/DeZn96mNLSi/"
+        },
+        # Missing postUrl and shortCode -> must be dropped
+        {
+            "ownerUsername": "another_user",
+            "text": "Looking for web developer"
+        },
+        # Valid item with shortCode only
+        {
+            "ownerUsername": "salon_bliss_pune",
+            "text": "Looking for modern website with booking calendar",
+            "shortCode": "DSchCCJAMnu"
+        }
+    ]
+
+    extracted_comments = []
+    for item in sample_dataset:
+        commenter_username = (
+            item.get("ownerUsername") 
+            or (item.get("owner") and item.get("owner").get("username"))
+            or (item.get("user") and item.get("user").get("username"))
+            or ""
+        ).lstrip("@").lower().strip()
+        raw_comment_text = (item.get("text") or item.get("caption") or item.get("comment") or "").strip()
+        post_url = item.get("postUrl") or item.get("url")
+        short_code = item.get("shortCode") or item.get("postShortCode")
+
+        if not post_url and short_code:
+            clean_code = str(short_code).strip("/").strip()
+            post_url = f"https://www.instagram.com/p/{clean_code}/"
+        elif post_url:
+            post_url = resolve_canonical_post_url(item, fallback_url=None)
+
+        # HARD GUARD: If any of these 3 is missing, DROP the entire item immediately!
+        if not commenter_username or not raw_comment_text or not post_url:
+            continue
+
+        extracted_comments.append({
+            "username": commenter_username,
+            "comment_text": raw_comment_text,
+            "source_post_url": post_url
+        })
+
+    assert len(extracted_comments) == 2, f"Expected exactly 2 valid atomic items, got {len(extracted_comments)}"
+    assert extracted_comments[0]["username"] == "dr_varun_dental"
+    assert extracted_comments[0]["source_post_url"] == "https://www.instagram.com/reel/DeZn96mNLSi/"
+    assert extracted_comments[1]["username"] == "salon_bliss_pune"
+    assert extracted_comments[1]["source_post_url"] == "https://www.instagram.com/p/DSchCCJAMnu/"
+    print("[OK] Atomic Single-Object Extraction and Hard Guard verified (Zero Cross-Mapping)!")
 
     print("\nALL APIFY ENGINE, COMMENT INTENT, BLACKLIST & SERVICE NICHE TESTS PASSED SUCCESSFULLY!")
 

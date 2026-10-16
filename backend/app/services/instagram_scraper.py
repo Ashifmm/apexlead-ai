@@ -646,13 +646,7 @@ def resolve_canonical_post_url(
         or comment.get("shortcode")
     )
 
-    # 1. Resolve directly from shortcode
-    if short_code and isinstance(short_code, str):
-        clean_code = short_code.strip("/").strip()
-        if len(clean_code) >= 5:
-            return f"https://www.instagram.com/p/{clean_code}/"
-
-    # 2. Resolve from raw post/reel URL
+    # 1. Resolve from raw post/reel URL if available (preserves /reel/ vs /p/)
     if raw_post_url and isinstance(raw_post_url, str):
         match = re.search(r"instagram\.com/(?:p|reel|reels|tv)/([A-Za-z0-9_-]{5,35})", raw_post_url)
         if match:
@@ -665,6 +659,12 @@ def resolve_canonical_post_url(
             if clean_url.startswith("http://"):
                 clean_url = "https://" + clean_url[7:]
             return clean_url
+
+    # 2. Resolve directly from shortcode
+    if short_code and isinstance(short_code, str):
+        clean_code = short_code.strip("/").strip()
+        if len(clean_code) >= 5:
+            return f"https://www.instagram.com/p/{clean_code}/"
 
     # 3. Fallback to passed fallback URL
     if fallback_url and isinstance(fallback_url, str):
@@ -679,16 +679,8 @@ def resolve_canonical_post_url(
             clean_fb = "https://" + clean_fb[7:]
         return clean_fb
 
-    # 4. Fallback to verified active curated reel/post
-    if CURATED_POST_REEL_URLS:
-        return CURATED_POST_REEL_URLS[0]
-
-    if username and isinstance(username, str):
-        clean_u = username.lstrip("@").strip()
-        if clean_u:
-            return f"https://www.instagram.com/{clean_u}/"
-
-    return "https://www.instagram.com/reel/DeZn96mNLSi/"
+    # 4. Strict 1-to-1 integrity: NEVER fabricate, guess, or assign unrelated reels!
+    return ""
 
 
 def scrape_instagram_comments_apify(
@@ -730,45 +722,77 @@ def scrape_instagram_comments_apify(
                 items = list(dataset.iterate_items())
                 logger.info(f"Apify Instagram Comment Scraper returned {len(items)} items.")
                 for item in items:
-                    # 1. Strictly extract commenter username (NEVER post creator)
-                    u = (
-                        item.get("ownerUsername") or
-                        (item.get("owner") or {}).get("username") or
-                        (item.get("user") or {}).get("username") or
-                        ""
+                    # 1. Atomic Single-Object Extraction (Zero Cross-Mapping):
+                    # Must extract strictly from the SAME comment object:
+                    commenter_username = (
+                        item.get("ownerUsername")
+                        or (item.get("owner") and item.get("owner").get("username"))
+                        or (item.get("user") and item.get("user").get("username"))
+                        or ""
                     ).lstrip("@").lower().strip()
+
+                    raw_comment_text = (
+                        item.get("text")
+                        or item.get("caption")
+                        or item.get("comment")
+                        or ""
+                    ).strip()
+
+                    post_url = (
+                        item.get("postUrl")
+                        or item.get("url")
+                        or item.get("inputUrl")
+                        or item.get("post_url")
+                    )
+                    short_code = (
+                        item.get("shortCode")
+                        or item.get("postShortCode")
+                        or item.get("code")
+                        or item.get("shortcode")
+                    )
+
+                    # If post_url is missing but short_code exists:
+                    if not post_url and short_code:
+                        clean_code = str(short_code).strip("/").strip()
+                        post_url = f"https://www.instagram.com/p/{clean_code}/"
+                    elif post_url:
+                        post_url = resolve_canonical_post_url(item, fallback_url=None)
+
+                    # HARD GUARD: If any of these 3 is missing, DROP the entire item immediately!
+                    if not commenter_username or not raw_comment_text or not post_url:
+                        continue
 
                     # Extract post creator if present to prevent creator self-comments
                     post_creator = (
-                        item.get("postOwnerUsername") or
-                        (item.get("post") or {}).get("ownerUsername") or
-                        item.get("authorUsername") or
-                        (item.get("post") or {}).get("username") or
-                        ""
+                        item.get("postOwnerUsername")
+                        or (item.get("post") or {}).get("ownerUsername")
+                        or item.get("authorUsername")
+                        or (item.get("post") or {}).get("username")
+                        or ""
                     ).lstrip("@").lower().strip()
 
-                    txt = item.get("text") or item.get("caption") or item.get("comment") or ""
                     # Strict negative keyword filtering
-                    if is_blacklisted_content(u) or is_blacklisted_content(txt):
+                    if is_blacklisted_content(commenter_username) or is_blacklisted_content(raw_comment_text):
                         continue
 
                     # Follower Filter Guard & Verification Check
                     is_ver = bool(
-                        item.get("isVerified") or
-                        (item.get("owner") or {}).get("isVerified") or
-                        (item.get("user") or {}).get("isVerified") or
-                        (item.get("owner") or {}).get("is_verified") or
-                        False
+                        item.get("isVerified")
+                        or (item.get("owner") or {}).get("isVerified")
+                        or (item.get("user") or {}).get("isVerified")
+                        or (item.get("owner") or {}).get("ownerVerified")
+                        or (item.get("owner") or {}).get("is_verified")
+                        or False
                     )
                     f_count = (
-                        item.get("followersCount") or
-                        (item.get("owner") or {}).get("followersCount") or
-                        (item.get("user") or {}).get("followersCount") or
-                        (item.get("owner") or {}).get("followerCount") or
-                        None
+                        item.get("followersCount")
+                        or (item.get("owner") or {}).get("followersCount")
+                        or (item.get("user") or {}).get("followersCount")
+                        or (item.get("owner") or {}).get("followerCount")
+                        or None
                     )
                     disqualified, dq_reason = is_disqualified_account(
-                        u,
+                        commenter_username,
                         followers_count=f_count,
                         is_verified=is_ver,
                         post_creator=post_creator
@@ -783,20 +807,18 @@ def scrape_instagram_comments_apify(
                     if comment_time and days_range:
                         diff_days = (now - comment_time).total_seconds() / 86400.0
                         if diff_days > float(days_range):
-                            logger.debug(f"Apify comment from @{u} older than days_range={days_range} ({diff_days:.1f}d)")
+                            logger.debug(f"Apify comment from @{commenter_username} older than days_range={days_range} ({diff_days:.1f}d)")
                             continue
 
-                    post_url = resolve_canonical_post_url(item, fallback_url=target_urls[0] if target_urls else None, username=u)
-                    if u and txt:
-                        raw_comments.append({
-                            "username": u,
-                            "comment_text": txt.strip(),
-                            "source_post_url": post_url,
-                            "timestamp": raw_ts,
-                            "comment_time": comment_time,
-                            "followers_count": f_count or 2200,
-                            "is_verified": is_ver
-                        })
+                    raw_comments.append({
+                        "username": commenter_username,
+                        "comment_text": raw_comment_text,
+                        "source_post_url": post_url,
+                        "timestamp": raw_ts,
+                        "comment_time": comment_time,
+                        "followers_count": f_count or 2200,
+                        "is_verified": is_ver
+                    })
         except Exception as e:
             logger.warning(f"Apify instagram-comment-scraper execution notice: {e}")
 
@@ -821,39 +843,58 @@ def scrape_instagram_comments_apify(
                     if is_blacklisted_content(caption):
                         continue
                     parent_post_url = resolve_canonical_post_url(post, fallback_url=None)
+                    if not parent_post_url:
+                        continue
+
                     post_creator = (
-                        post.get("ownerUsername") or
-                        (post.get("owner") or {}).get("username") or
-                        ""
+                        post.get("ownerUsername")
+                        or (post.get("owner") or {}).get("username")
+                        or ""
                     ).lstrip("@").lower().strip()
 
                     comments_list = post.get("comments") or post.get("latestComments") or []
                     for c in comments_list:
-                        # Strictly extract commenter username (NEVER post creator)
-                        u = (
-                            c.get("ownerUsername") or
-                            (c.get("owner") or {}).get("username") or
-                            (c.get("user") or {}).get("username") or
-                            ""
+                        # Must extract strictly from the SAME comment object:
+                        commenter_username = (
+                            c.get("ownerUsername")
+                            or (c.get("owner") and c.get("owner").get("username"))
+                            or (c.get("user") and c.get("user").get("username"))
+                            or ""
                         ).lstrip("@").lower().strip()
 
-                        txt = c.get("text") or c.get("comment") or ""
+                        raw_comment_text = (
+                            c.get("text") or c.get("comment") or ""
+                        ).strip()
+
+                        c_post_url = (
+                            c.get("postUrl")
+                            or c.get("url")
+                            or (f"https://www.instagram.com/p/{c.get('shortCode')}/" if c.get("shortCode") else None)
+                            or parent_post_url
+                        )
+                        c_post_url = resolve_canonical_post_url(c, fallback_url=c_post_url)
+
+                        # HARD GUARD: If any of these 3 is missing, DROP the entire item immediately!
+                        if not commenter_username or not raw_comment_text or not c_post_url:
+                            continue
+
                         # Strict negative keyword filtering
-                        if is_blacklisted_content(u) or is_blacklisted_content(txt):
+                        if is_blacklisted_content(commenter_username) or is_blacklisted_content(raw_comment_text):
                             continue
 
                         is_ver = bool(
-                            c.get("isVerified") or
-                            (c.get("owner") or {}).get("isVerified") or
-                            False
+                            c.get("isVerified")
+                            or (c.get("owner") or {}).get("isVerified")
+                            or (c.get("owner") or {}).get("ownerVerified")
+                            or False
                         )
                         f_count = (
-                            c.get("followersCount") or
-                            (c.get("owner") or {}).get("followersCount") or
-                            None
+                            c.get("followersCount")
+                            or (c.get("owner") or {}).get("followersCount")
+                            or None
                         )
                         disqualified, dq_reason = is_disqualified_account(
-                            u,
+                            commenter_username,
                             followers_count=f_count,
                             is_verified=is_ver,
                             post_creator=post_creator
@@ -868,17 +909,15 @@ def scrape_instagram_comments_apify(
                             if diff_days > float(days_range):
                                 continue
 
-                        if u and txt:
-                            c_url = resolve_canonical_post_url(c, fallback_url=parent_post_url, username=u)
-                            raw_comments.append({
-                                "username": u,
-                                "comment_text": txt.strip(),
-                                "source_post_url": c_url,
-                                "timestamp": raw_ts,
-                                "comment_time": comment_time,
-                                "followers_count": f_count or 1950,
-                                "is_verified": is_ver
-                            })
+                        raw_comments.append({
+                            "username": commenter_username,
+                            "comment_text": raw_comment_text,
+                            "source_post_url": c_post_url,
+                            "timestamp": raw_ts,
+                            "comment_time": comment_time,
+                            "followers_count": f_count or 1950,
+                            "is_verified": is_ver
+                        })
         except Exception as e:
             logger.warning(f"Apify instagram-scraper execution notice: {e}")
 
@@ -989,13 +1028,16 @@ def harvest_instagram_leads(
             if score < 70:
                 continue
 
+            p_url = resolve_canonical_post_url(cand, fallback_url=cand.get("source_post_url"))
+            if not p_url:
+                continue
+
             seen_in_this_run.add(u)
             b_name = u.replace("_", " ").replace(".", " ").title()
             ind = niche.title() if niche and niche.strip() else "Small Business"
             loc = cand.get("location") or "India"
             f_count = cand.get("followers_count", 2400)
             pitch = format_growthgrid_pitch(b_name)
-            p_url = resolve_canonical_post_url(cand, fallback_url=cand.get("source_post_url"), username=u)
 
             new_lead = Lead(
                 business_name=b_name,
@@ -1060,8 +1102,12 @@ def harvest_instagram_leads(
                     continue
                 if u in existing_usernames or u in seen_in_this_run:
                     continue
-                seen_in_this_run.add(u)
 
+                p_url = resolve_canonical_post_url(profile, fallback_url=profile.get("source_post_url"))
+                if not p_url:
+                    continue
+
+                seen_in_this_run.add(u)
                 comment_time = now - timedelta(days=days_ago)
                 freshness_label = format_freshness_label(comment_time)
                 b_name = profile["business_name"]
@@ -1070,7 +1116,6 @@ def harvest_instagram_leads(
                 f_count = profile.get("followers_count", 2500)
                 score = profile["intent_score"]
                 pitch = format_growthgrid_pitch(b_name)
-                p_url = resolve_canonical_post_url(profile, fallback_url=profile.get("source_post_url"), username=u)
 
                 new_lead = Lead(
                     business_name=b_name,
@@ -1095,58 +1140,6 @@ def harvest_instagram_leads(
                 db.refresh(new_lead)
                 existing_usernames.add(u)
                 harvested_leads.append(new_lead)
-
-        # Step 3: Cycling from Real Service Accounts Pool if requested quantity exceeds pool size
-        # Guarantees 100% REAL handles ONLY - NEVER synthetic fake usernames
-        pool_cycle_idx = 0
-        while len(harvested_leads) < target_quantity and effective_pool:
-            profile = effective_pool[pool_cycle_idx % len(effective_pool)]
-            pool_cycle_idx += 1
-            u = profile["username"].lower()
-            comment = profile["comment_text"]
-            days_ago = profile.get("days_ago", 1.0)
-            if days_ago > float(days_range):
-                continue
-            if is_blacklisted_content(u) or is_blacklisted_content(comment):
-                continue
-
-            # If already seen, append distinct real campaign variation for testing
-            suffix = f"_{len(harvested_leads) + 1}" if u in seen_in_this_run else ""
-            clean_handle = f"{u}{suffix}" if suffix else u
-            seen_in_this_run.add(clean_handle)
-
-            comment_time = now - timedelta(days=days_ago)
-            freshness_label = format_freshness_label(comment_time)
-            b_name = profile["business_name"]
-            ind = profile["industry"]
-            loc = profile.get("location", "India")
-            f_count = profile.get("followers_count", 2500)
-            score = profile["intent_score"]
-            pitch = format_growthgrid_pitch(b_name)
-            p_url = resolve_canonical_post_url(profile, fallback_url=profile.get("source_post_url"), username=clean_handle)
-
-            new_lead = Lead(
-                business_name=b_name,
-                industry=ind,
-                location=loc,
-                website_url=None,
-                has_website=False,
-                email=None,
-                phone=None,
-                instagram_handle=f"@{clean_handle}",
-                source="Instagram Intent",
-                status="Intent Detected",
-                lead_score=score,
-                score_reasons=f"Intent Score: {score}% • Posted: {freshness_label} • Real Indian small business ({f_count:,} followers)",
-                source_post_url=p_url,
-                comment_text=comment,
-                outreach_instagram_dm=pitch,
-                notes=f"Posted: {freshness_label} | Followers: {f_count:,} | Location: {loc} | Discovered via Real Comment Harvester | Inquiry: {comment}"
-            )
-            db.add(new_lead)
-            db.commit()
-            db.refresh(new_lead)
-            harvested_leads.append(new_lead)
 
         # Terminal telemetry
         print(f"Total posts harvested: {len(harvested_leads) * 2}")
