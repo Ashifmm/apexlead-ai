@@ -20,6 +20,7 @@ from app.services.instagram_scraper import (
     parse_comment_timestamp,
     format_freshness_label,
     is_disqualified_account,
+    verify_live_instagram_url,
 )
 from app.services.gemini_service import gemini_service
 
@@ -291,6 +292,22 @@ def test_apify_engine():
     assert extracted_comments[1]["username"] == "salon_bliss_pune"
     assert extracted_comments[1]["source_post_url"] == "https://www.instagram.com/p/DSchCCJAMnu/"
     print("[OK] Atomic Single-Object Extraction and Hard Guard verified (Zero Cross-Mapping)!")
+
+    # 12. Test Live URL Pre-Validation (Mandatory Filter)
+    print("[Testing] Mandatory Live URL Pre-Validation...")
+    # Valid real reel & profile
+    assert verify_live_instagram_url("https://www.instagram.com/reel/DD7h6wNti5n/") is True
+    assert verify_live_instagram_url("https://www.instagram.com/the_dentist_hub_delhi/") is True
+    assert verify_live_instagram_url("https://instagram.com/reel/DD7h6wNti5n/?igsh=123") is True
+
+    # Structural rejection tests
+    assert verify_live_instagram_url("https://instagram.com/p/abc/", check_http=False) is False  # too short shortcode (<5 chars)
+    assert verify_live_instagram_url("https://www.instagram.com/explore/", check_http=False) is False  # blacklisted slug
+    assert verify_live_instagram_url("https://www.instagram.com/stories/", check_http=False) is False  # blacklisted slug
+    assert verify_live_instagram_url("https://notinstagram.com/reel/12345678/", check_http=False) is False
+    assert verify_live_instagram_url("", check_http=False) is False
+    assert verify_live_instagram_url(None, check_http=False) is False
+    print("[OK] Mandatory Live URL Pre-Validation tests passed successfully!")
 
     print("\nALL APIFY ENGINE, COMMENT INTENT, BLACKLIST & SERVICE NICHE TESTS PASSED SUCCESSFULLY!")
 

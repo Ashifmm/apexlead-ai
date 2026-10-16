@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath("."))
 
 from app.db.session import SessionLocal
 from app.db.init_db import init_db
-from app.services.instagram_scraper import instagram_scraper, is_blacklisted_content
+from app.services.instagram_scraper import instagram_scraper, is_blacklisted_content, verify_live_instagram_url
 from app.models.lead import Lead
 
 def test_instagram_lead_extractor():
@@ -48,6 +48,8 @@ def test_instagram_lead_extractor():
             assert "Followers:" in (db_lead.notes or ""), f"Notes missing Followers metric: {db_lead.notes}"
             assert "Posted:" in (db_lead.notes or ""), f"Notes missing Posted freshness metric: {db_lead.notes}"
             assert db_lead.source_post_url.startswith("https://www.instagram.com/"), f"Invalid post URL: {db_lead.source_post_url}"
+            assert verify_live_instagram_url(f"https://www.instagram.com/{db_lead.instagram_handle.lstrip('@')}/") is True, f"Lead handle URL failed live verification: {db_lead.instagram_handle}"
+            assert verify_live_instagram_url(db_lead.source_post_url) is True, f"Lead post URL failed live verification: {db_lead.source_post_url}"
 
             print(f"[{idx}] ID={db_lead.id} | {db_lead.instagram_handle} | {db_lead.business_name} | {db_lead.industry} | Score={db_lead.lead_score}%")
             print(f"     Location: {db_lead.location} | Notes: {db_lead.notes[:80]}...")

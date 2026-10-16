@@ -8,6 +8,7 @@ from app.services.instagram_scraper import (
     instagram_scanner,
     format_growthgrid_pitch,
     HarvestResult,
+    verify_live_instagram_url,
 )
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "instagram_scanner",
     "format_growthgrid_pitch",
     "HarvestResult",
+    "verify_live_instagram_url",
 ]

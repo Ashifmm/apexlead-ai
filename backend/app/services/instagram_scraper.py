@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import requests
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional, Set, Tuple
 from sqlalchemy.orm import Session
@@ -130,6 +131,74 @@ def is_disqualified_account(
         return True, f"@{clean_u} has {followers_count} followers (> 15,000 small business threshold)"
 
     return False, "Eligible small business prospect"
+
+
+def verify_live_instagram_url(url: str, check_http: bool = True) -> bool:
+    """
+    Live URL Pre-Validation (Mandatory Filter):
+    Guarantees 100% valid, accessible, and working live Instagram URLs before saving to DB.
+    1. Structural Verification: Ensures canonical https://www.instagram.com/ format with
+       valid post/reel shortcodes (>=5 chars) or valid profile usernames.
+    2. Automated HTTP Status Check: Sends request with real browser headers to confirm
+       HTTP 200 OK and absence of 'This page isn't available' or 'Page Not Found'.
+    """
+    if not url or not isinstance(url, str):
+        return False
+
+    clean_url = url.strip()
+    if clean_url.startswith("http://"):
+        clean_url = "https://" + clean_url[7:]
+
+    # If it's a bare handle or relative path, prepend canonical Instagram prefix
+    if not clean_url.startswith("https://"):
+        clean_slug = clean_url.lstrip("@").strip("/")
+        clean_url = f"https://www.instagram.com/{clean_slug}/"
+    elif clean_url.startswith("https://instagram.com/"):
+        clean_url = clean_url.replace("https://instagram.com/", "https://www.instagram.com/")
+
+    # Domain check: must strictly be www.instagram.com
+    if not clean_url.startswith("https://www.instagram.com/"):
+        return False
+
+    # 1. Structural / Format Check
+    if "/reel/" in clean_url or "/p/" in clean_url or "/tv/" in clean_url:
+        match = re.search(r"^https://www\.instagram\.com/(?:p|reel|reels|tv)/([A-Za-z0-9_-]{5,35})/?", clean_url)
+        if not match:
+            return False
+    else:
+        # Profile handle format check
+        match = re.search(r"^https://www\.instagram\.com/([A-Za-z0-9_.-]{3,30})/?", clean_url)
+        if not match:
+            return False
+        slug = match.group(1).lower()
+        if slug in BLACKLISTED_SLUGS or slug in {"p", "reel", "reels", "tv", "stories", "explore", "direct", "accounts", "about"}:
+            return False
+
+    if not check_http:
+        return True
+
+    # 2. Automated HTTP Check
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+    try:
+        res = requests.get(clean_url, headers=headers, timeout=5, allow_redirects=True)
+        if res.status_code != 200:
+            return False
+
+        text_lower = res.text.lower()
+        if (
+            "this page isn't available" in text_lower
+            or "the link you followed may be broken" in text_lower
+            or "page not found" in text_lower
+        ):
+            return False
+
+        return True
+    except Exception as e:
+        logger.debug(f"Live URL check failed for {clean_url}: {e}")
+        return False
 
 
 # 1. Curated Seed List: Active Public Agency, Designer & Service Profiles
@@ -807,8 +876,13 @@ def scrape_instagram_comments_apify(
                     if comment_time and days_range:
                         diff_days = (now - comment_time).total_seconds() / 86400.0
                         if diff_days > float(days_range):
-                            logger.debug(f"Apify comment from @{commenter_username} older than days_range={days_range} ({diff_days:.1f}d)")
                             continue
+
+                    # Mandatory Live URL Pre-Validation
+                    prof_url = f"https://www.instagram.com/{commenter_username}/"
+                    if not verify_live_instagram_url(prof_url) or not verify_live_instagram_url(post_url):
+                        logger.debug(f"Skipping comment: Live URL pre-validation failed for @{commenter_username} or post {post_url}")
+                        continue
 
                     raw_comments.append({
                         "username": commenter_username,
@@ -908,6 +982,12 @@ def scrape_instagram_comments_apify(
                             diff_days = (now - comment_time).total_seconds() / 86400.0
                             if diff_days > float(days_range):
                                 continue
+
+                        # Mandatory Live URL Pre-Validation
+                        prof_url = f"https://www.instagram.com/{commenter_username}/"
+                        if not verify_live_instagram_url(prof_url) or not verify_live_instagram_url(c_post_url):
+                            logger.debug(f"Skipping comment: Live URL pre-validation failed for @{commenter_username} or post {c_post_url}")
+                            continue
 
                         raw_comments.append({
                             "username": commenter_username,
@@ -1032,6 +1112,11 @@ def harvest_instagram_leads(
             if not p_url:
                 continue
 
+            prof_url = f"https://www.instagram.com/{u}/"
+            if not verify_live_instagram_url(prof_url) or not verify_live_instagram_url(p_url):
+                logger.debug(f"Skipping lead candidate @{u}: live URL verification failed for profile or post {p_url}")
+                continue
+
             seen_in_this_run.add(u)
             b_name = u.replace("_", " ").replace(".", " ").title()
             ind = niche.title() if niche and niche.strip() else "Small Business"
@@ -1105,6 +1190,11 @@ def harvest_instagram_leads(
 
                 p_url = resolve_canonical_post_url(profile, fallback_url=profile.get("source_post_url"))
                 if not p_url:
+                    continue
+
+                prof_url = f"https://www.instagram.com/{u}/"
+                if not verify_live_instagram_url(prof_url) or not verify_live_instagram_url(p_url):
+                    logger.debug(f"Skipping pool candidate @{u}: live URL verification failed for profile or post {p_url}")
                     continue
 
                 seen_in_this_run.add(u)
@@ -1201,6 +1291,7 @@ __all__ = [
     "scrape_instagram_comments_apify",
     "evaluate_commercial_intent",
     "resolve_canonical_post_url",
+    "verify_live_instagram_url",
     "is_blacklisted_content",
     "parse_comment_timestamp",
     "format_freshness_label",

@@ -212,12 +212,16 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           <tbody className="divide-y divide-slate-800/60 text-slate-200">
             {leads.map((lead) => {
               const handleClean = (lead.instagram_handle || "prospect").replace("@", "").trim();
-              const profileUrl = `https://instagram.com/${handleClean}`;
-              const postUrl = lead.source_post_url || (lead.notes?.match(/https:\/\/instagram\.com\/(?:p|reel)\/[^\s\n]+/)?.[0]) || profileUrl;
-              const postCodeMatch = postUrl.match(/\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
-              const isReel = postUrl.includes("/reel/");
+              const profileUrl = `https://www.instagram.com/${handleClean}/`;
+              let rawPostUrl = lead.source_post_url || (lead.notes?.match(/https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[^\s\n]+/)?.[0]);
+              let postUrl = rawPostUrl;
+              if (postUrl && !postUrl.startsWith("https://www.instagram.com/")) {
+                postUrl = postUrl.replace(/^https?:\/\/(?:www\.)?instagram\.com\//, "https://www.instagram.com/");
+              }
+              const postCodeMatch = postUrl ? postUrl.match(/\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/) : null;
+              const isReel = postUrl ? postUrl.includes("/reel/") : false;
               const postPrefix = isReel ? "reel" : "p";
-              const postCode = postCodeMatch ? `${postPrefix}/${postCodeMatch[1].slice(0, 8)}` : "Post";
+              const postCode = postCodeMatch ? `${postPrefix}/${postCodeMatch[1].slice(0, 8)}` : null;
 
               const commentDisplay = lead.comment_text || (lead.notes?.split("Original Comment:")[1]?.split("\n")[0]?.trim()) || (lead.score_reasons || "Commercial inquiry captured");
 
@@ -300,16 +304,31 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                         </span>
                       </div>
                       <div>
-                        <a
-                          href={postUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white hover:border-slate-700 transition-all"
-                        >
-                          <Hash className="h-2.5 w-2.5 text-pink-400" />
-                          <span>{postCode}</span>
-                          <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
-                        </a>
+                        {postUrl && postCode ? (
+                          <a
+                            href={postUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white hover:border-slate-700 transition-all"
+                            title="Verify original Instagram Post/Reel"
+                          >
+                            <Hash className="h-2.5 w-2.5 text-pink-400" />
+                            <span>{postCode}</span>
+                            <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
+                          </a>
+                        ) : (
+                          <a
+                            href={profileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 hover:text-white hover:border-slate-700 transition-all"
+                            title="Open Profile"
+                          >
+                            <Hash className="h-2.5 w-2.5 text-slate-500" />
+                            <span>profile</span>
+                            <ExternalLink className="h-2.5 w-2.5 text-slate-500 ml-0.5" />
+                          </a>
+                        )}
                       </div>
                     </div>
                   </td>
